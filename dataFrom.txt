@@ -1,0 +1,2 @@
+PbPb: /alice/data/2022/LHC22q/528991/apass4_lowIR/0150/o2_ctf_run00528991_orbit0017576576_tf0000000301_epn044/002
+pp:  /alice/data/2022/LHC22o/528543/apass6/0930/o2_ctf_run00528543_orbit0579213952_tf0000022361_epn189/002

@@ -1,6 +1,6 @@
-export OPTIONS="-b --configuration json://config.json"
+export OPTIONS="-b --configuration json://configPb.json"
 
-o2-analysis-je-jet-deriveddata-producer ${OPTIONS} | o2-analysis-je-jet-finder-data-charged ${OPTIONS} | o2-analysis-timestamp ${OPTIONS} | o2-analysis-event-selection ${OPTIONS} | o2-analysis-trackselection ${OPTIONS} | o2-analysis-multiplicity-table ${OPTIONS} | o2-analysis-centrality-table ${OPTIONS} | o2-analysis-track-propagation ${OPTIONS} | o2-analysis-je-jet-lund-reclustering ${OPTIONS}
+o2-analysis-je-jet-deriveddata-producer ${OPTIONS} | o2-analysis-tracks-extra-converter ${OPTIONS} | o2-analysis-bc-converter ${OPTIONS} | o2-analysis-je-jet-finder-data-charged ${OPTIONS} | o2-analysis-timestamp ${OPTIONS} | o2-analysis-event-selection ${OPTIONS} | o2-analysis-trackselection ${OPTIONS} | o2-analysis-multiplicity-table ${OPTIONS} | o2-analysis-centrality-table ${OPTIONS} | o2-analysis-track-propagation ${OPTIONS} | o2-analysis-je-jet-lund-reclustering ${OPTIONS}
 
 
 

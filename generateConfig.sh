@@ -1,3 +1,15 @@
+#!/bin/bash
+
+use_cuts=("$@")
+if [ ${#use_cuts[@]} -eq 0 ]; then
+    echo "ERROR: No cuts provided. Please provide cuts in runCutVar.sh script"
+    exit 1
+fi
+
+#Function to generate the standard configuration
+generate_standard_config() {
+    local configFile="generated_config.json"
+    cat << EOF > "$configFile"
 {
     "internal-dpl-clock": "",
     "internal-dpl-aod-reader": {
@@ -760,9 +772,9 @@
         "Tfcut_min": "0",
         "Tfcut_max": "20",
         "Rgcut_trans": "0.10000000000000001",
-        "Tf_limit": "1",
+        "Tf_limit": "0",
         "jetPtMin": "5",
-        "jetR": "0.3",
+        "jetR": "0.300000012",
         "jet_min_eta": "-0.5",
         "jet_max_eta": "0.5",
         "genKTp": "0.5",
@@ -853,6 +865,13 @@
                 "0.90000000000000002"
             ]
         },
+        "lnkt-binning": {
+            "values": [
+                "10",
+                "-10",
+                "10"
+            ]
+        },
         "Delta-R-binning": {
             "values": [
                 "50",
@@ -867,9 +886,140 @@
                 "1.2000000476837158"
             ]
         },
+        "zg-binning": {
+            "values": [
+                "50",
+                "0",
+                "1.2"
+            ]
+        },
+        "erad-binning": {
+            "values": [
+                "1000",
+                "0",
+                "10000"
+            ]
+        },
+        "lnDeltaRBinning-binning": {
+            "values": [
+                "50",
+                "-5",
+                "10"
+            ]
+        },
+        "lnzTheta-binning": {
+            "values": [
+                "50",
+                "-10",
+                "10"
+            ]
+        },
+        "tf-binning": {
+            "values": [
+                "100",
+                "0",
+                "22"
+            ]
+        },
+        "lnTf-binning": {
+            "values": [
+                "100",
+                "10",
+                "10"
+            ]
+        },
         "processChargedJets": "true"
     },
+EOF
+    echo "$configFile"
+}
+
+#Function to append to the standard configuration the configuration for each single cut
+append_config_for_cut() {
+    local cutName=$1
+    echo "local var: cutName "$cutName
+    local configFile=$2
+    local tf_limit="0"
+    local tfcut_max="20"
+    local tfcut_min="3"
+    local configSectionName="jet-lund-reclustering$cutName" 
+    echo "local section name: "$configSectionName
+    if [[ $cutName = *'trans'* ]]; then
+        echo 'transition of limits'
+        tf_limit="0"
+        if [[ $cutName = *'large'* ]]; then
+            echo 'large time'
+            tfcut_max="20"
+            tfcut_min="3"
+        elif [[ $cutName = *'intermed'* ]]; then
+            echo 'intermedite time'
+            tfcut_max="3"
+            tfcut_min="1"
+        elif [[ $cutName = *'short'* ]]; then
+            echo 'short time'
+            tfcut_max="1"
+            tfcut_min="0"
+        fi
+    elif [[ $cutName = *'1hard'* ]]; then
+        echo 'hard limit'
+        tf_limit="1"
+        if [[ $cutName = *'large'* ]]; then
+            echo 'large time'
+            tfcut_max="20"
+            tfcut_min="3"
+        elif [[ $cutName = *'intermed'* ]]; then
+            echo 'intermedite time'
+            tfcut_max="3"
+            tfcut_min="1"
+        elif [[ $cutName = *'short'* ]]; then
+            echo 'short time'
+            tfcut_max="1"
+            tfcut_min="0"
+        fi
+    elif [[ $cutName = *'2soft'* ]]; then
+        echo 'soft limit'
+        tf_limit="2"
+        if [[ $cutName = *'large'* ]]; then
+            echo 'large time'
+            tfcut_max="20"
+            tfcut_min="3"
+        elif [[ $cutName = *'intermed'* ]]; then
+            echo 'intermedite time'
+            tfcut_max="3"
+            tfcut_min="1"
+        elif [[ $cutName = *'short'* ]]; then
+            echo 'short time'
+            tfcut_max="1"
+            tfcut_min="0"
+        fi
+    fi
+    sed "/\"jet-lund-reclustering\"/,\$!d; s/\"jet-lund-reclustering\"/\"$configSectionName\"/; s/\"Tf_limit\": \"[^\"]*\"/\"Tf_limit\": \"$tf_limit\"/; s/\"Tfcut_max\": \"[^\"]*\"/\"Tfcut_max\": \"$tfcut_max\"/; s/\"Tfcut_min\": \"[^\"]*\"/\"Tfcut_min\": \"$tfcut_min\"/" "$configFile" >> "cut_config.json"
+}
+
+#Function to finalize the overall configuration
+finalize_config_file() {
+    local configFile=$1
+    cat "cut_config.json" >> "$configFile"
+    rm "cut_config.json"
+    cat << EOF >> "$configFile"
     "internal-dpl-aod-writer": "",
     "internal-dpl-aod-global-analysis-file-sink": "",
     "internal-dpl-injected-dummy-sink": ""
 }
+EOF
+}
+
+#Generate the standard configuration
+configFile=$(generate_standard_config)
+
+#Append each cut variation to the configuration
+for cut in "${use_cuts[@]}"; do
+    IFS='=' read -r cutName <<< "$cut"
+    echo "cut in generateConfig: "$cut
+    echo "cutName in generateConfig: "$cutName
+    append_config_for_cut "$cutName" "$configFile"
+done
+
+#Finalize the configuration file
+finalize_config_file "$configFile"
+

@@ -9,6 +9,17 @@ std::array<int, 2> getProjectionBins(const TAxis* axis, const double min, const 
   return std::array{firstBin, lastBin};
 }
 
+TString createSuffix(TString strInPT){
+  TString clone = strInPT.Copy();
+  Int_t begin = clone.First('_'); 
+  clone.Remove(0,begin+1);
+  Int_t dot = clone.First('.'); 
+  Int_t len = clone.Length();
+  clone.Remove(dot,len);
+  std::cout<<clone<<std::endl;
+  return clone;
+}
+
 std::array<double, 2> getNorm(TH1 *VacHist, TH1 *MedHist){
   std::array<int,2> VacPtBins = getProjectionBins(VacHist->GetXaxis(), 0, 200);
   std::array<int,2> MedPtBins = getProjectionBins(MedHist->GetXaxis(), 0, 200);
@@ -23,15 +34,17 @@ std::array<double, 2> getNorm(TH1 *VacHist, TH1 *MedHist){
 }
 
 void plotRgs(TString strInPP, TString strInPb, TString suff){
-  TFile *finPP = new TFile(strInPP.Data());
+  TFile *finPPP = new TFile(strInPP.Data());
   TFile *finPb = new TFile(strInPb.Data());
 
+  TString suffPP = createSuffix(strInPP);
+  TString suffPb = createSuffix(strInPb);
   //Recluster info
-  TH1 *h1RgSigPP = dynamic_cast<TH1*>(finPP->Get("jet-lund-reclustering/h1RgSplit_1"));// 1st split
-  TH1 *h1RgSigPb = dynamic_cast<TH1*>(finPb->Get("jet-lund-reclustering/h1RgSplit_1"));
+  TH1 *h1RgSigPP = dynamic_cast<TH1*>(finPPP->Get("jet-lund-reclustering"+suffPP+"/h1RgSplit_1"));// 1st split
+  TH1 *h1RgSigPb = dynamic_cast<TH1*>(finPb->Get("jet-lund-reclustering"+suffPb+"/h1RgSplit_1"));
 
-  TH3 *h3PtEtaPhiVac = dynamic_cast<TH3*>(finPP->Get("jet-lund-reclustering/h3PtEtaPhi_JClus"));// unweighted..histograms from jet-clustering
-  TH3 *h3PtEtaPhiMed = dynamic_cast<TH3*>(finPb->Get("jet-lund-reclustering/h3PtEtaPhi_JClus"));//maybe better to take the weighted...
+  TH3 *h3PtEtaPhiVac = dynamic_cast<TH3*>(finPPP->Get("jet-lund-reclustering"+suffPP+"/h3PtEtaPhi_JClus"));// unweighted..histograms from jet-clustering
+  TH3 *h3PtEtaPhiMed = dynamic_cast<TH3*>(finPb->Get("jet-lund-reclustering"+suffPb+"/h3PtEtaPhi_JClus"));//maybe better to take the weighted...
 
   TH1 *h1SigPtVac = h3PtEtaPhiVac->Project3D("x");
   TH1 *h1SigPtMed = h3PtEtaPhiMed->Project3D("x");
@@ -109,10 +122,12 @@ void plotPtEtaPhi(TString strIn, TString suff){
   TFile *fin = new TFile(strIn.Data());
   std::cout<< "Plot QA info for"<<suff<<std::endl;
 
-  TH3 *h3Clus = dynamic_cast<TH3*>(fin->Get("jet-lund-reclustering/h3PtEtaPhi_JClus"));// pt, eta, phi
-  TH3 *h3Recl = dynamic_cast<TH3*>(fin->Get("jet-lund-reclustering/h3PtEtaPhi_JRecl"));
-  TH3 *h3Rej = dynamic_cast<TH3*>(fin->Get("jet-lund-reclustering/h3PtEtaPhi_JReject"));
-  TH3 *h3ReclSub = dynamic_cast<TH3*>(fin->Get("jet-lund-reclustering/h3PtEtaPhi_JReclSub2"));
+  TString suffix = createSuffix(strIn);
+
+  TH3 *h3Clus = dynamic_cast<TH3*>(fin->Get("jet-lund-reclustering"+suffix+"/h3PtEtaPhi_JClus"));// pt, eta, phi
+  TH3 *h3Recl = dynamic_cast<TH3*>(fin->Get("jet-lund-reclustering"+suffix+"/h3PtEtaPhi_JRecl"));
+  TH3 *h3Rej = dynamic_cast<TH3*>(fin->Get("jet-lund-reclustering"+suffix+"/h3PtEtaPhi_JReject"));
+  TH3 *h3ReclSub = dynamic_cast<TH3*>(fin->Get("jet-lund-reclustering"+suffix+"/h3PtEtaPhi_JReclSub2"));
 
   list<TString>  proj{"xz", "yz", "xy"};  
   for (auto p : proj ){
@@ -233,25 +248,29 @@ void plotTiming(TString strInH, TString strInS, TString strInT, TString suff){
 
   std::cout<< "Plot timing info for "<<suff<<std::endl;
 
-  TH1 *h1LogTfSigH = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering/h1LogTfSplit_1"));// first splits
-  TH1 *h1LogTfSigS = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering/h1LogTfSplit_1"));
-  TH1 *h1LogTfSigT = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering/h1LogTfSplit_1"));
-  TH1 *h1LogTfSigH2 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering/h1LogTfSplit_2"));// second splits
-  TH1 *h1LogTfSigS2 = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering/h1LogTfSplit_2"));
-  TH1 *h1LogTfSigT2 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering/h1LogTfSplit_2"));
-  TH1 *h1LogTfSigH0 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering/h1LogTfSplit_0"));// all splits
-  TH1 *h1LogTfSigS0 = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering/h1LogTfSplit_0"));
-  TH1 *h1LogTfSigT0 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering/h1LogTfSplit_0"));
+  TString sufT = createSuffix(strInT);
+  TString sufH = createSuffix(strInH);
+  TString sufS = createSuffix(strInS);
 
-  TH1 *h1TfSigH = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering/h1TfSplit_1"));
-  TH1 *h1TfSigS = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering/h1TfSplit_1"));
-  TH1 *h1TfSigT = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering/h1TfSplit_1"));
-  TH1 *h1TfSigH0 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering/h1TfSplit_0"));
-  TH1 *h1TfSigS0 = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering/h1TfSplit_0"));
-  TH1 *h1TfSigT0 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering/h1TfSplit_0"));
-  TH1 *h1TfSigH2 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering/h1TfSplit_2"));
-  TH1 *h1TfSigS2 = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering/h1TfSplit_2"));
-  TH1 *h1TfSigT2 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering/h1TfSplit_2"));
+  TH1 *h1LogTfSigH = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1LogTfSplit_1"));// first splits
+  TH1 *h1LogTfSigS = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1LogTfSplit_1"));
+  TH1 *h1LogTfSigT = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1LogTfSplit_1"));
+  TH1 *h1LogTfSigH2 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1LogTfSplit_2"));// second splits
+  TH1 *h1LogTfSigS2 = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1LogTfSplit_2"));
+  TH1 *h1LogTfSigT2 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1LogTfSplit_2"));
+  TH1 *h1LogTfSigH0 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1LogTfSplit_0"));// all splits
+  TH1 *h1LogTfSigS0 = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1LogTfSplit_0"));
+  TH1 *h1LogTfSigT0 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1LogTfSplit_0"));
+
+  TH1 *h1TfSigH = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1TfSplit_1"));
+  TH1 *h1TfSigS = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1TfSplit_1"));
+  TH1 *h1TfSigT = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1TfSplit_1"));
+  TH1 *h1TfSigH0 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1TfSplit_0"));
+  TH1 *h1TfSigS0 = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1TfSplit_0"));
+  TH1 *h1TfSigT0 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1TfSplit_0"));
+  TH1 *h1TfSigH2 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1TfSplit_2"));
+  TH1 *h1TfSigS2 = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1TfSplit_2"));
+  TH1 *h1TfSigT2 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1TfSplit_2"));
   
   TCanvas *logTf = new TCanvas("logTf"+suff,"logTf"+suff,1500,400);
   logTf->Divide(3,1);
@@ -366,18 +385,27 @@ void plotTiming(TString strInH, TString strInS, TString strInT, TString suff){
 void doRaaRanges(TString strInPP, TString strInPb, TString strInPPShort, TString strInPbShort, TString strInPPLarge, TString strInPbLarge, 
                  TString strInPPIntermed, TString strInPbIntermed, TString recluster){
 
-  TFile *finp = new TFile(strInPP.Data());
+  TFile *finPP = new TFile(strInPP.Data());
   TFile *finPb = new TFile(strInPb.Data());
-  TFile *finpS = new TFile(strInPPShort.Data());
+  TFile *finPPS = new TFile(strInPPShort.Data());
   TFile *finPbS = new TFile(strInPbShort.Data());
-  TFile *finpL = new TFile(strInPPLarge.Data());
+  TFile *finPPL = new TFile(strInPPLarge.Data());
   TFile *finPbL = new TFile(strInPbLarge.Data());
-  TFile *finpI = new TFile(strInPPIntermed.Data());
+  TFile *finPPI = new TFile(strInPPIntermed.Data());
   TFile *finPbI = new TFile(strInPbIntermed.Data());
   // this should be done with weighted pt spectra.. but i dont have wights (yet)
+
+  TString suffPb = createSuffix(strInPb);
+  TString suffP = createSuffix(strInPP);
+  TString suffPI = createSuffix(strInPPIntermed);
+  TString suffPbI = createSuffix(strInPbIntermed);
+  TString suffPbL = createSuffix(strInPbLarge);
+  TString suffPL = createSuffix(strInPPLarge);
+  TString suffPbS = createSuffix(strInPbShort);
+  TString suffPS = createSuffix(strInPPShort);
   //all
-  TH3 *h3PtEtaPhiVac = dynamic_cast<TH3*>(finp->Get("jet-lund-reclustering/h3PtEtaPhi_JRecl"));// unweighted..histograms with tau veto LP
-  TH3 *h3PtEtaPhiMed = dynamic_cast<TH3*>(finPb->Get("jet-lund-reclustering/h3PtEtaPhi_JRecl"));//maybe better to take the weighted..
+  TH3 *h3PtEtaPhiVac = dynamic_cast<TH3*>(finPP->Get("jet-lund-reclustering"+suffP+"/h3PtEtaPhi_JRecl"));// unweighted..histograms with tau veto LP
+  TH3 *h3PtEtaPhiMed = dynamic_cast<TH3*>(finPb->Get("jet-lund-reclustering"+suffPb+"/h3PtEtaPhi_JRecl"));//maybe better to take the weighted..
   TH1 *p = h3PtEtaPhiVac->Project3D("x");
   TH1 *Pb = h3PtEtaPhiMed->Project3D("x");
   std::array<double, 2> PtNorm = getNorm(p, Pb);
@@ -388,10 +416,9 @@ void doRaaRanges(TString strInPP, TString strInPb, TString strInPPShort, TString
   TH1* h1SigPtWp = (TH1*)p->Clone();
   TH1* h1SigPtWPb = (TH1*)Pb->Clone();
 
-
   //large 
-  TH3 *h3PtEtaPhiVacL = dynamic_cast<TH3*>(finpL->Get("jet-lund-reclustering/h3PtEtaPhi_JRecl"));// unweighted..histograms with tau veto LP
-  TH3 *h3PtEtaPhiMedL = dynamic_cast<TH3*>(finPbL->Get("jet-lund-reclustering/h3PtEtaPhi_JRecl"));//maybe better to take the weighted..
+  TH3 *h3PtEtaPhiVacL = dynamic_cast<TH3*>(finPPL->Get("jet-lund-reclustering"+suffPL+"/h3PtEtaPhi_JRecl"));// unweighted..histograms with tau veto LP
+  TH3 *h3PtEtaPhiMedL = dynamic_cast<TH3*>(finPbL->Get("jet-lund-reclustering"+suffPbL+"/h3PtEtaPhi_JRecl"));//maybe better to take the weighted..
   TH1 *Lp = h3PtEtaPhiVacL->Project3D("x");
   TH1 *LPb = h3PtEtaPhiMedL->Project3D("x");
   std::array<double, 2> LNorm = getNorm(Lp, LPb);
@@ -401,8 +428,8 @@ void doRaaRanges(TString strInPP, TString strInPb, TString strInPPShort, TString
   TH1* h1SigPtWPbL = (TH1*)LPb->Clone();
 
   //short
-  TH3 *h3PtEtaPhiVacS = dynamic_cast<TH3*>(finpS->Get("jet-lund-reclustering/h3PtEtaPhi_JRecl"));// unweighted..histograms with tau veto LP
-  TH3 *h3PtEtaPhiMedS = dynamic_cast<TH3*>(finPbS->Get("jet-lund-reclustering/h3PtEtaPhi_JRecl"));//maybe better to take the weighted..
+  TH3 *h3PtEtaPhiVacS = dynamic_cast<TH3*>(finPPS->Get("jet-lund-reclustering"+suffPS+"/h3PtEtaPhi_JRecl"));// unweighted..histograms with tau veto LP
+  TH3 *h3PtEtaPhiMedS = dynamic_cast<TH3*>(finPbS->Get("jet-lund-reclustering"+suffPbS+"/h3PtEtaPhi_JRecl"));//maybe better to take the weighted..
   TH1 *Sp = h3PtEtaPhiVacS->Project3D("x");
   TH1 *SPb = h3PtEtaPhiMedS->Project3D("x");
   std::array<double, 2> SNorm = getNorm(Sp, SPb);
@@ -412,8 +439,8 @@ void doRaaRanges(TString strInPP, TString strInPb, TString strInPPShort, TString
   TH1* h1SigPtWPbS = (TH1*)SPb->Clone();
 
   //intermed
-  TH3 *h3PtEtaPhiVacI = dynamic_cast<TH3*>(finpI->Get("jet-lund-reclustering/h3PtEtaPhi_JRecl"));
-  TH3 *h3PtEtaPhiMedI = dynamic_cast<TH3*>(finPbI->Get("jet-lund-reclustering/h3PtEtaPhi_JRecl"));
+  TH3 *h3PtEtaPhiVacI = dynamic_cast<TH3*>(finPPI->Get("jet-lund-reclustering/"+suffPI+"h3PtEtaPhi_JRecl"));
+  TH3 *h3PtEtaPhiMedI = dynamic_cast<TH3*>(finPbI->Get("jet-lund-reclustering"+suffPbI+"/h3PtEtaPhi_JRecl"));
   TH1 *Ip = h3PtEtaPhiVacI->Project3D("x");
   TH1 *IPb = h3PtEtaPhiMedI->Project3D("x");
   std::array<double, 2> INorm = getNorm(Ip, IPb);
@@ -531,20 +558,27 @@ void doRaaRanges(TString strInPP, TString strInPb, TString strInPPShort, TString
 */
 }
 
+
 void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString suff){
   TFile *finT = new TFile(strInPT.Data());
   TFile *finH = new TFile(strInPH.Data());
   TFile *finS = new TFile(strInPS.Data());
   std::cout<< "Plot timing info for"<<suff<<std::endl;
-   
-  //check correlation of zg and rg for 1st, 2nd splits 
-  TH2 *h2Rg21H = dynamic_cast<TH2*>(finH->Get("jet-lund-reclustering/h2RgTfSplit_1"));//  R_{g}; #tau_{form}
-  TH2 *h2Rg21S = dynamic_cast<TH2*>(finS->Get("jet-lund-reclustering/h2RgTfSplit_1"));//  R_{g}; #tau_{form}
-  TH2 *h2Rg21T = dynamic_cast<TH2*>(finT->Get("jet-lund-reclustering/h2RgTfSplit_1"));//  R_{g}; #tau_{form}
 
-  TH2 *h2Rg2H = dynamic_cast<TH2*>(finH->Get("jet-lund-reclustering/h2RgTfSplit_2"));//  R_{g}; #tau_{form}
-  TH2 *h2Rg2S = dynamic_cast<TH2*>(finS->Get("jet-lund-reclustering/h2RgTfSplit_2"));//  R_{g}; #tau_{form}
-  TH2 *h2Rg2T = dynamic_cast<TH2*>(finT->Get("jet-lund-reclustering/h2RgTfSplit_2"));//  R_{g}; #tau_{form}
+  TString sufT = createSuffix(strInPT);
+  TString sufH = createSuffix(strInPH);
+  TString sufS = createSuffix(strInPS);
+
+  //std::cout<<strInPT<<std::endl;
+
+  //check correlation of zg and rg for 1st, 2nd splits 
+  TH2 *h2Rg21H = dynamic_cast<TH2*>(finH->Get("jet-lund-reclustering"+sufH+"/h2RgTfSplit_1"));//  R_{g}; #tau_{form}
+  TH2 *h2Rg21S = dynamic_cast<TH2*>(finS->Get("jet-lund-reclustering"+sufS+"/h2RgTfSplit_1"));//  R_{g}; #tau_{form}
+  TH2 *h2Rg21T = dynamic_cast<TH2*>(finT->Get("jet-lund-reclustering"+sufT+"/h2RgTfSplit_1"));//  R_{g}; #tau_{form}
+
+  TH2 *h2Rg2H = dynamic_cast<TH2*>(finH->Get("jet-lund-reclustering"+sufH+"/h2RgTfSplit_2"));//  R_{g}; #tau_{form}
+  TH2 *h2Rg2S = dynamic_cast<TH2*>(finS->Get("jet-lund-reclustering"+sufS+"/h2RgTfSplit_2"));//  R_{g}; #tau_{form}
+  TH2 *h2Rg2T = dynamic_cast<TH2*>(finT->Get("jet-lund-reclustering"+sufT+"/h2RgTfSplit_2"));//  R_{g}; #tau_{form}
   TCanvas *r1 = new TCanvas("r1","r1",1000,600);
   r1->Divide(3,2);
   r1->cd(1);//TH1F *rg = DrawFrame(0.,1.,0.,10.,"R_{g}","#tau_{form}");
@@ -581,13 +615,13 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   r1->cd();
   r1->SaveAs("Correlation1st2ndSplit_RgTf_"+suff+".png");
 
-  TH2 *h2Zg21H = dynamic_cast<TH2*>(finH->Get("jet-lund-reclustering/h2ZgTfSplit_1"));//  R_{g}; #tau_{form}
-  TH2 *h2Zg21S = dynamic_cast<TH2*>(finS->Get("jet-lund-reclustering/h2ZgTfSplit_1"));//  R_{g}; #tau_{form}
-  TH2 *h2Zg21T = dynamic_cast<TH2*>(finT->Get("jet-lund-reclustering/h2ZgTfSplit_1"));//  R_{g}; #tau_{form}
+  TH2 *h2Zg21H = dynamic_cast<TH2*>(finH->Get("jet-lund-reclustering"+sufH+"/h2ZgTfSplit_1"));//  R_{g}; #tau_{form}
+  TH2 *h2Zg21S = dynamic_cast<TH2*>(finS->Get("jet-lund-reclustering"+sufS+"/h2ZgTfSplit_1"));//  R_{g}; #tau_{form}
+  TH2 *h2Zg21T = dynamic_cast<TH2*>(finT->Get("jet-lund-reclustering"+sufT+"/h2ZgTfSplit_1"));//  R_{g}; #tau_{form}
 
-  TH2 *h2Zg2H = dynamic_cast<TH2*>(finH->Get("jet-lund-reclustering/h2ZgTfSplit_2"));//  R_{g}; #tau_{form}
-  TH2 *h2Zg2S = dynamic_cast<TH2*>(finS->Get("jet-lund-reclustering/h2ZgTfSplit_2"));//  R_{g}; #tau_{form}
-  TH2 *h2Zg2T = dynamic_cast<TH2*>(finT->Get("jet-lund-reclustering/h2ZgTfSplit_2"));//  R_{g}; #tau_{form}
+  TH2 *h2Zg2H = dynamic_cast<TH2*>(finH->Get("jet-lund-reclustering"+sufH+"/h2ZgTfSplit_2"));//  R_{g}; #tau_{form}
+  TH2 *h2Zg2S = dynamic_cast<TH2*>(finS->Get("jet-lund-reclustering"+sufS+"/h2ZgTfSplit_2"));//  R_{g}; #tau_{form}
+  TH2 *h2Zg2T = dynamic_cast<TH2*>(finT->Get("jet-lund-reclustering"+sufT+"/h2ZgTfSplit_2"));//  R_{g}; #tau_{form}
   TCanvas *z1 = new TCanvas("z1","z1",1000,600);
   z1->Divide(3,2);
   z1->cd(1);//TH1F *rg = DrawFrame(0.,1.,0.,10.,"R_{g}","#tau_{form}");
@@ -622,12 +656,12 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   DrawLatex(0.45, 0.85, suff, 0.04);
   z1->SaveAs("Correlation1st2ndSplit_ZgTf_"+suff+".png");
 
-  TH2 *h2g21H = dynamic_cast<TH2*>(finH->Get("jet-lund-reclustering/h2ZgRgSplit_1"));
-  TH2 *h2g21S = dynamic_cast<TH2*>(finS->Get("jet-lund-reclustering/h2ZgRgSplit_1"));
-  TH2 *h2g21T = dynamic_cast<TH2*>(finT->Get("jet-lund-reclustering/h2ZgRgSplit_1"));
-  TH2 *h2g2H = dynamic_cast<TH2*>(finH->Get("jet-lund-reclustering/h2ZgRgSplit_2"));
-  TH2 *h2g2S = dynamic_cast<TH2*>(finS->Get("jet-lund-reclustering/h2ZgRgSplit_2"));
-  TH2 *h2g2T = dynamic_cast<TH2*>(finT->Get("jet-lund-reclustering/h2ZgRgSplit_2"));
+  TH2 *h2g21H = dynamic_cast<TH2*>(finH->Get("jet-lund-reclustering"+sufH+"/h2ZgRgSplit_1"));
+  TH2 *h2g21S = dynamic_cast<TH2*>(finS->Get("jet-lund-reclustering"+sufS+"/h2ZgRgSplit_1"));
+  TH2 *h2g21T = dynamic_cast<TH2*>(finT->Get("jet-lund-reclustering"+sufT+"/h2ZgRgSplit_1"));
+  TH2 *h2g2H = dynamic_cast<TH2*>(finH->Get("jet-lund-reclustering"+sufH+"/h2ZgRgSplit_2"));
+  TH2 *h2g2S = dynamic_cast<TH2*>(finS->Get("jet-lund-reclustering"+sufS+"/h2ZgRgSplit_2"));
+  TH2 *h2g2T = dynamic_cast<TH2*>(finT->Get("jet-lund-reclustering"+sufT+"/h2ZgRgSplit_2"));
   TCanvas *g1 = new TCanvas("g1","g1",1000,600);
   g1->Divide(3,2);
   g1->cd(1);
@@ -663,12 +697,12 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   g1->SaveAs("Correlation1st2ndSplit_ZgRg_"+suff+".png");
 
 
-  TH1 *h1TfSigTau0 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering/h1TfSplit_1"));//1st split - trans
-  TH1 *h1TfSigTauSoft0 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering/h1TfSplit_1"));//1st split - hard
-  TH1 *h1TfSigCA0 = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering/h1TfSplit_1"));//1st split - soft
-  TH1 *h1TfSigTau1 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering/h1TfSplit_2"));//2n split - trans
-  TH1 *h1TfSigTauSoft1 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering/h1TfSplit_2"));//2n split -hard
-  TH1 *h1TfSigCA1 = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering/h1TfSplit_2"));//2nd split - soft
+  TH1 *h1TfSigTau0 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1TfSplit_1"));//1st split - trans
+  TH1 *h1TfSigTauSoft0 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1TfSplit_1"));//1st split - hard
+  TH1 *h1TfSigCA0 = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1TfSplit_1"));//1st split - soft
+  TH1 *h1TfSigTau1 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1TfSplit_2"));//2n split - trans
+  TH1 *h1TfSigTauSoft1 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1TfSplit_2"));//2n split -hard
+  TH1 *h1TfSigCA1 = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1TfSplit_2"));//2nd split - soft
   
   TCanvas *ct = new TCanvas("tf_"+suff,"tf_"+suff,800,400);
   ct->Divide(2,1);
@@ -712,12 +746,12 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
 
   ct->SaveAs("tform_1And2ndSplits_"+suff+".png");
   
-  TH1 *h1ZgSigCA0 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering/h1ZgSplit_1"));
-  TH1 *h1ZgSigCA0soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering/h1ZgSplit_1"));
-  TH1 *h1ZgSigTau0 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering/h1ZgSplit_1"));
-  TH1 *h1ZgSigCA1 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering/h1ZgSplit_2"));
-  TH1 *h1ZgSigCA1soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering/h1ZgSplit_2"));
-  TH1 *h1ZgSigTau1 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering/h1ZgSplit_2"));
+  TH1 *h1ZgSigCA0 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1ZgSplit_1"));
+  TH1 *h1ZgSigCA0soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1ZgSplit_1"));
+  TH1 *h1ZgSigTau0 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1ZgSplit_1"));
+  TH1 *h1ZgSigCA1 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1ZgSplit_2"));
+  TH1 *h1ZgSigCA1soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1ZgSplit_2"));
+  TH1 *h1ZgSigTau1 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1ZgSplit_2"));
 
   TCanvas *cS = new TCanvas("cS_"+suff,"cS_"+suff,800,400);
   cS->Divide(2,1);
@@ -758,12 +792,12 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
 
   cS->SaveAs("Zg_1And2ndSplits_"+suff+".png");
 
-  TH1 *h1RgCASig0 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering/h1RgSplit_1"));
-  TH1 *h1RgCASig0soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering/h1RgSplit_1"));
-  TH1 *h1RgTauSig0 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering/h1RgSplit_1"));
-  TH1 *h1RgCASig1 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering/h1RgSplit_2"));
-  TH1 *h1RgCASig1soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering/h1RgSplit_2"));
-  TH1 *h1RgTauSig1 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering/h1RgSplit_2"));
+  TH1 *h1RgCASig0 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1RgSplit_1"));
+  TH1 *h1RgCASig0soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1RgSplit_1"));
+  TH1 *h1RgTauSig0 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1RgSplit_1"));
+  TH1 *h1RgCASig1 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1RgSplit_2"));
+  TH1 *h1RgCASig1soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1RgSplit_2"));
+  TH1 *h1RgTauSig1 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1RgSplit_2"));
   
   TCanvas *cSR = new TCanvas("cSR_"+suff,"cSR_"+suff,800,400);
   cSR->Divide(2,1);
@@ -805,12 +839,12 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   cSR->SaveAs("Rg_1And2ndSplits_"+suff+".png");
 
   //energy of sum of the two branches at each node
-  TH1 *h1EradSigCA0 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering/h1EradSplit_1"));
-  TH1 *h1EradSigCA0soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering/h1EradSplit_1"));
-  TH1 *h1EradSigTau0 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering/h1EradSplit_1"));
-  TH1 *h1EradSigCA1 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering/h1EradSplit_2"));
-  TH1 *h1EradSigCA1soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering/h1EradSplit_2"));
-  TH1 *h1EradSigTau1 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering/h1EradSplit_2"));
+  TH1 *h1EradSigCA0 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1EradSplit_1"));
+  TH1 *h1EradSigCA0soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1EradSplit_1"));
+  TH1 *h1EradSigTau0 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1EradSplit_1"));
+  TH1 *h1EradSigCA1 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1EradSplit_2"));
+  TH1 *h1EradSigCA1soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1EradSplit_2"));
+  TH1 *h1EradSigTau1 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1EradSplit_2"));
 
   TCanvas *cSE = new TCanvas("cSE_"+suff,"cSE_"+suff,800,400);
   cSE->Divide(2,1);
@@ -852,12 +886,12 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   cSE->SaveAs("EnergySum_1And2ndSplits_"+suff+".png");
 
   //Log(1/angle) in the algorithm
-  TH1 *h1LogDr12SigCA0 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering/h1LogDr12Split_1"));
-  TH1 *h1LogDr12SigCA0soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering/h1LogDr12Split_1"));
-  TH1 *h1LogDr12SigTau0 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering/h1LogDr12Split_1"));
-  TH1 *h1LogDr12SigCA1 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering/h1LogDr12Split_2"));
-  TH1 *h1LogDr12SigCA1soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering/h1LogDr12Split_2"));
-  TH1 *h1LogDr12SigTau1 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering/h1LogDr12Split_2"));
+  TH1 *h1LogDr12SigCA0 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1LogDr12Split_1"));
+  TH1 *h1LogDr12SigCA0soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1LogDr12Split_1"));
+  TH1 *h1LogDr12SigTau0 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1LogDr12Split_1"));
+  TH1 *h1LogDr12SigCA1 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1LogDr12Split_2"));
+  TH1 *h1LogDr12SigCA1soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1LogDr12Split_2"));
+  TH1 *h1LogDr12SigTau1 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1LogDr12Split_2"));
 
   TCanvas *cSL = new TCanvas("cSL_"+suff,"cSL_"+suff,800,400);
   cSL->Divide(2,1);
@@ -899,12 +933,12 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   cSL->SaveAs("Log1overAngle_1And2ndSplits_"+suff+".png");
 
   // Log(z*angle) in the algorithm
-  TH1 *h1LogZthetaSigCA0 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering/h1LogZthetaSplit_1"));
-  TH1 *h1LogZthetaSigCA0soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering/h1LogZthetaSplit_1"));
-  TH1 *h1LogZthetaSigTau0 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering/h1LogZthetaSplit_1"));
-  TH1 *h1LogZthetaSigCA1 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering/h1LogZthetaSplit_2"));
-  TH1 *h1LogZthetaSigCA1soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering/h1LogZthetaSplit_2"));
-  TH1 *h1LogZthetaSigTau1 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering/h1LogZthetaSplit_2"));
+  TH1 *h1LogZthetaSigCA0 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1LogZthetaSplit_1"));
+  TH1 *h1LogZthetaSigCA0soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1LogZthetaSplit_1"));
+  TH1 *h1LogZthetaSigTau0 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1LogZthetaSplit_1"));
+  TH1 *h1LogZthetaSigCA1 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1LogZthetaSplit_2"));
+  TH1 *h1LogZthetaSigCA1soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1LogZthetaSplit_2"));
+  TH1 *h1LogZthetaSigTau1 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1LogZthetaSplit_2"));
 
   TCanvas *cSEL = new TCanvas("cSEL_"+suff,"cSEL_"+suff,800,400);
   cSEL->Divide(2,1);
@@ -945,11 +979,12 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   DrawLatex(0.7,0.5, suff, 0.07);
   cSEL->SaveAs("LogTimesZfrac_1And2ndSplits_"+suff+".png");
   
-  
 }
 
 void plotNsubj( TString strIn, TString suff){ // add these sigJetRecurZcut_tau21, sigJetRecurZcut_tau32, sigJetRecurTauZcut_tau21, sigJetRecurTauZcut_tau32
   TFile *fin = new TFile(strIn.Data());
+
+  TString suffix = createSuffix(strIn);
   /*
     // Jet substructure - nSub0 = deltaR
     registry.add("h3Nsubj2Ratio", "Subjettiness Ratio correlation to p_{T} and R_{g}; #tau{2}/#tau_{1}; p_{T,jet} [GeV/#it{c}]; #Delta R", {HistType::kTH3F, {{50, 0, 1}, {200, 0, 200}, {25, 0, 0.5}}});
@@ -957,8 +992,8 @@ void plotNsubj( TString strIn, TString suff){ // add these sigJetRecurZcut_tau21
 
 */
   std::cout<< "Plot subjettiness info for "<<suff<<std::endl;
-  TH3 *h3Nsubj = dynamic_cast<TH3*>(fin->Get("jet-lund-reclustering/h3Nsubj2"));// deltaR, tau1, tau2
-  TH3 *h3NsubjRatio = dynamic_cast<TH3*>(fin->Get("jet-lund-reclustering/h3Nsubj2Ratio"));// deltaR, tau2/tau1, pT
+  TH3 *h3Nsubj = dynamic_cast<TH3*>(fin->Get("jet-lund-reclustering"+suffix+"/h3Nsubj2"));// deltaR, tau1, tau2
+  TH3 *h3NsubjRatio = dynamic_cast<TH3*>(fin->Get("jet-lund-reclustering"+suffix+"/h3Nsubj2Ratio"));// deltaR, tau2/tau1, pT
   h3Nsubj->Sumw2();
   TH2 *h2NsubjRatio21XYMan0 = new TH2F("h2NsubjRatio21XYMan", "h2NsubjRatio21XYMan",50, 0.,1, 50, 0, 1);
   for (int i = 1; i<h3Nsubj->GetNbinsX()+1; i ++){
@@ -1037,10 +1072,14 @@ void plotNsubj( TString strIn, TString suff){ // add these sigJetRecurZcut_tau21
 }
 
 void plotNsubjInRanges(TString strInPP, TString strInPb, TString strInPPS, TString strInPbS, TString strInPPI, TString strInPbI, TString strInPPL, TString strInPbL, TString dy){
-  TFile *finPP = new TFile(strInPP.Data());
+  TFile *finPPP = new TFile(strInPP.Data());
   TFile *finPb = new TFile(strInPb.Data());
-  TH3 *h3PtEtaPhiVac = dynamic_cast<TH3*>(finPP->Get("jet-lund-reclustering/h3PtEtaPhi_JClus"));// unweighted..histograms from jet-clustering
-  TH3 *h3PtEtaPhiMed = dynamic_cast<TH3*>(finPb->Get("jet-lund-reclustering/h3PtEtaPhi_JClus"));//maybe better to take the weighted...
+
+  TString suffPP = createSuffix(strInPP);
+  TString suffPb = createSuffix(strInPb);
+
+  TH3 *h3PtEtaPhiVac = dynamic_cast<TH3*>(finPPP->Get("jet-lund-reclustering"+suffPP+"/h3PtEtaPhi_JClus"));// unweighted..histograms from jet-clustering
+  TH3 *h3PtEtaPhiMed = dynamic_cast<TH3*>(finPb->Get("jet-lund-reclustering"+suffPb+"/h3PtEtaPhi_JClus"));//maybe better to take the weighted...
 
   TH1 *h1SigPtVac = h3PtEtaPhiVac->Project3D("x");
   TH1 *h1SigPtMed = h3PtEtaPhiMed->Project3D("x");
@@ -1077,7 +1116,8 @@ void plotNsubjInRanges(TString strInPP, TString strInPb, TString strInPPS, TStri
   for(auto i : ifiles){
     std::cout<< i <<std::endl;
     TFile *fin = new TFile(i.Data());
-    TH3 *h2Nsubj21 = dynamic_cast<TH3*>(fin->Get("jet-lund-reclustering/h3Nsubj2Ratio"));// x =  #tau{2}/#tau_{1}; y = p_{T,jet} [GeV/#it{c}]; z = #Delta R
+    TString suffix = createSuffix(i);
+    TH3 *h2Nsubj21 = dynamic_cast<TH3*>(fin->Get("jet-lund-reclustering"+suffix+"/h3Nsubj2Ratio"));// x =  #tau{2}/#tau_{1}; y = p_{T,jet} [GeV/#it{c}]; z = #Delta R
     TH1 *tau21 = h2Nsubj21->Project3D("x");
     tau21->SetLineWidth(2);
     projNsubj->cd(1);
@@ -1151,7 +1191,8 @@ void plotNsubjInRanges(TString strInPP, TString strInPb, TString strInPPS, TStri
 
   for(auto i : ifiles){
     TFile *fin = new TFile(i.Data());
-    TH3 *h2Nsubj21 = dynamic_cast<TH3*>(fin->Get("jet-lund-reclustering/h3Nsubj2Ratio"));// x =  #tau{2}/#tau_{1}; y = p_{T,jet} [GeV/#it{c}]; z = #Delta R
+    TString suffix = createSuffix(i);
+    TH3 *h2Nsubj21 = dynamic_cast<TH3*>(fin->Get("jet-lund-reclustering"+suffix+"/h3Nsubj2Ratio"));// x =  #tau{2}/#tau_{1}; y = p_{T,jet} [GeV/#it{c}]; z = #Delta R
     TH1 *tau21 = h2Nsubj21->Project3D("z");
     tau21->SetLineWidth(2);
     projDeltaR->cd(1);
@@ -1210,10 +1251,14 @@ void plotNsubjInRanges(TString strInPP, TString strInPb, TString strInPPS, TStri
 }
 
 void plotRgZgInRanges(TString strInPP, TString strInPb, TString strInPPS, TString strInPbS, TString strInPPI, TString strInPbI, TString strInPPL, TString strInPbL, TString dy){
-  TFile *finPP = new TFile(strInPP.Data());
+  TFile *finPPP = new TFile(strInPP.Data());
   TFile *finPb = new TFile(strInPb.Data());
-  TH3 *h3PtEtaPhiVac = dynamic_cast<TH3*>(finPP->Get("jet-lund-reclustering/h3PtEtaPhi_JClus"));// unweighted..histograms from jet-clustering
-  TH3 *h3PtEtaPhiMed = dynamic_cast<TH3*>(finPb->Get("jet-lund-reclustering/h3PtEtaPhi_JClus"));//maybe better to take the weighted...
+
+  TString suffPP = createSuffix(strInPP);
+  TString suffPb = createSuffix(strInPb);
+  
+  TH3 *h3PtEtaPhiVac = dynamic_cast<TH3*>(finPPP->Get("jet-lund-reclustering"+suffPP+"/h3PtEtaPhi_JClus"));// unweighted..histograms from jet-clustering
+  TH3 *h3PtEtaPhiMed = dynamic_cast<TH3*>(finPb->Get("jet-lund-reclustering"+suffPb+"/h3PtEtaPhi_JClus"));//maybe better to take the weighted...
   TH1 *h1SigPtVac = h3PtEtaPhiVac->Project3D("x");
   TH1 *h1SigPtMed = h3PtEtaPhiMed->Project3D("x");
   std::array<double, 2> PtNorm = getNorm(h1SigPtVac, h1SigPtMed);
@@ -1242,10 +1287,8 @@ void plotRgZgInRanges(TString strInPP, TString strInPb, TString strInPPS, TStrin
   for(auto i : ifiles){
     std::cout<<i<<std::endl;
     TFile *fin = new TFile(i.Data());
-    i.ReplaceAll(".root","");
-    i.ReplaceAll("/","_");
-    std::cout<<" new i: "<<i<<std::endl;
-    TH2 *h2Rg21 = dynamic_cast<TH2*>(fin->Get("jet-lund-reclustering/h2RgTfSplit_0"));//  R_{g}; #tau_{form}
+    TString suffix = createSuffix(i);
+    TH2 *h2Rg21 = dynamic_cast<TH2*>(fin->Get("jet-lund-reclustering"+suffix+"/h2RgTfSplit_0"));//  R_{g}; #tau_{form}
     
     TH1 *tau21 = h2Rg21->ProjectionX();
     tau21->SetLineWidth(2);
@@ -1322,36 +1365,11 @@ void plotRgZgInRanges(TString strInPP, TString strInPb, TString strInPPS, TStrin
 
   for(auto i : ifiles){
     TFile *fin = new TFile(i.Data());
-    i.ReplaceAll(".root","");
-    i.ReplaceAll("/","_");
-    if (i.Contains("PP")){
-        if(i.Contains("short")){
-          i = "pp_short";
-        }else if (i.Contains("large"))
-        {
-          i = "pp_large";
-        }else if (i.Contains("intermed"))
-        {
-          i = "pp_intermed";
-        }
-        else i = "pp_incl";
-    }else if (i.Contains("Pb"))
-    {
-        if(i.Contains("short")){
-          i = "PbPb_short";
-        }else if (i.Contains("large"))
-        {
-          i = "PbPb_large";
-        }else if (i.Contains("intermed"))
-        {
-          i = "PbPb_intermed";
-        }
-        else i = "PbPb_incl";
-    }
+    TString suffix = createSuffix(i);
     
-    TH2 *h2ZgTf = dynamic_cast<TH2*>(fin->Get("jet-lund-reclustering/h2ZgTfSplit_0"));//  Z_{g}; #tau_{form}
-    TH2 *h2ZgRg = dynamic_cast<TH2*>(fin->Get("jet-lund-reclustering/h2ZgRgSplit_0"));//  Z_{g}; R_{g}
-    TH2 *h2RgTf = dynamic_cast<TH2*>(fin->Get("jet-lund-reclustering/h2RgTfSplit_0"));//  R_{g}; #tau_{form}
+    TH2 *h2ZgTf = dynamic_cast<TH2*>(fin->Get("jet-lund-reclustering"+suffix+"/h2ZgTfSplit_0"));//  Z_{g}; #tau_{form}
+    TH2 *h2ZgRg = dynamic_cast<TH2*>(fin->Get("jet-lund-reclustering"+suffix+"/h2ZgRgSplit_0"));//  Z_{g}; R_{g}
+    TH2 *h2RgTf = dynamic_cast<TH2*>(fin->Get("jet-lund-reclustering"+suffix+"/h2RgTfSplit_0"));//  R_{g}; #tau_{form}
     
     TCanvas *corrZgRgTF = new TCanvas("corrZgRgTF_"+i,"corrZgRgTF_"+i,1500,400);
     corrZgRgTF->Divide(3,1);
@@ -1368,7 +1386,7 @@ void plotRgZgInRanges(TString strInPP, TString strInPb, TString strInPPS, TStrin
     gPad->SetLogz();
     h2RgTf->Draw("colz same");
     DrawLatex(0.55, 0.55, i+"  "+dy, 0.06);
-    corrZgRgTF->SaveAs("corrZgRgTF"+i+"_"+dy+".png");
+    corrZgRgTF->SaveAs("corrZgRgTF_"+suffix+"_"+dy+".png");
 
     TH1 *tau21 = h2ZgTf->ProjectionX();
     tau21->SetLineWidth(2);
@@ -1463,6 +1481,8 @@ void o2plots() {
   */
 
 
+  compareSplits( "AnalysisResults_Pb_trans.root",  "AnalysisResults_Pb_1hard.root",  "AnalysisResults_Pb_2soft.root", "Pb");
+  compareSplits( "AnalysisResults_PP_trans.root",  "AnalysisResults_PP_1hard.root",  "AnalysisResults_PP_2soft.root", "PP");
   
   return;
 // adjust code to respect the additional suffix AnalysisResults_Pb_1hard_large.root jet-lund-reclusterigPb_1hard_large
@@ -1471,7 +1491,6 @@ void o2plots() {
   //plotNsubjInRanges(strInPP, strInPb, strInPPS, strInPbS, strInPPI, strInPbI, strInPPL, strInPbL, "trans"); //cross check nsub above for underflow problem !
   //plotNsubj(strInPb, "PbPb_transition");// not optima, but for sure an underflow issue ! - add statement to o2 physics code !
   // These are "okey"
-  //compareSplits( "PbPb/AnalysisResults_Pb_trans.root",  "PbPb/AnalysisResults_Pb_1hard.root",  "PbPb/AnalysisResults_Pb_2soft.root", "PbPb");
   //plotRgZgInRanges(strInPP, strInPb, strInPPS, strInPbS, strInPPI, strInPbI, strInPPL, strInPbL, "trans");
   //plotPtEtaPhi(strInPP, "pp transition");
   //plotTiming("PP/AnalysisResults_PP_1hard.root", "PP/AnalysisResults_PP_2soft.root", "PP/AnalysisResults_PP_trans.root", "pp");

@@ -8,7 +8,7 @@ fi
 
 #Function to generate the standard configuration
 generate_standard_config() {
-    local configFile="generated_config.json"
+    local configFile="generated_configPb.json"
     cat << EOF > "$configFile"
 {
     "internal-dpl-clock": "",
@@ -941,7 +941,7 @@ append_config_for_cut() {
     local configFile=$2
     local tf_limit="0"
     local tfcut_max="20"
-    local tfcut_min="3"
+    local tfcut_min="0"
     local configSectionName="jet-lund-reclustering$cutName" 
     echo "local section name: "$configSectionName
     if [[ $cutName = *'trans'* ]]; then

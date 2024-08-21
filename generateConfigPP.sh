@@ -898,9 +898,9 @@ generate_standard_config() {
         },
         "erad-binning": {
             "values": [
-                "1000",
+                "100",
                 "0",
-                "10000"
+                "200"
             ]
         },
         "lnDeltaRBinning-binning": {

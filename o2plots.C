@@ -33,18 +33,30 @@ std::array<double, 2> getNorm(TH1 *VacHist, TH1 *MedHist){
   return std::array{normPP, normPb};
 }
 
-void plotRgs(TString strInPP, TString strInPb, TString suff){
-  TFile *finPPP = new TFile(strInPP.Data());
-  TFile *finPb = new TFile(strInPb.Data());
+void plotRgs(TString strInPPT, TString strInPbT, TString strInPPH, TString strInPbH, TString strInPPS, TString strInPbS){
+  TFile *finPPP = new TFile(strInPPT.Data());
+  TFile *finPb = new TFile(strInPbT.Data());
+  TFile *finPPH = new TFile(strInPPH.Data());
+  TFile *finPbH = new TFile(strInPbH.Data());
+  TFile *finPPS = new TFile(strInPPS.Data());
+  TFile *finPbS = new TFile(strInPbS.Data());
 
-  TString suffPP = createSuffix(strInPP);
-  TString suffPb = createSuffix(strInPb);
+  TString suffPP = createSuffix(strInPPT);
+  TString suffPb = createSuffix(strInPbT);
+  TString suffPPH = createSuffix(strInPPH);
+  TString suffPbH = createSuffix(strInPbH);
+  TString suffPPS = createSuffix(strInPPS);
+  TString suffPbS = createSuffix(strInPbS);
   //Recluster info
-  TH1 *h1RgSigPP = dynamic_cast<TH1*>(finPPP->Get("jet-lund-reclustering"+suffPP+"/h1RgSplit_1"));// 1st split
+  TH1 *h1RgSigPP = dynamic_cast<TH1*>(finPPP->Get("jet-lund-reclustering"+suffPP+"/h1RgSplit_1"));// 1st splits
   TH1 *h1RgSigPb = dynamic_cast<TH1*>(finPb->Get("jet-lund-reclustering"+suffPb+"/h1RgSplit_1"));
+  TH1 *h1RgSigPPH = dynamic_cast<TH1*>(finPPH->Get("jet-lund-reclustering"+suffPPH+"/h1RgSplit_1"));
+  TH1 *h1RgSigPbH = dynamic_cast<TH1*>(finPbH->Get("jet-lund-reclustering"+suffPbH+"/h1RgSplit_1"));
+  TH1 *h1RgSigPPS = dynamic_cast<TH1*>(finPPS->Get("jet-lund-reclustering"+suffPPS+"/h1RgSplit_1"));
+  TH1 *h1RgSigPbS = dynamic_cast<TH1*>(finPbS->Get("jet-lund-reclustering"+suffPbS+"/h1RgSplit_1"));
 
   TH3 *h3PtEtaPhiVac = dynamic_cast<TH3*>(finPPP->Get("jet-lund-reclustering"+suffPP+"/h3PtEtaPhi_JClus"));// unweighted..histograms from jet-clustering
-  TH3 *h3PtEtaPhiMed = dynamic_cast<TH3*>(finPb->Get("jet-lund-reclustering"+suffPb+"/h3PtEtaPhi_JClus"));//maybe better to take the weighted...
+  TH3 *h3PtEtaPhiMed = dynamic_cast<TH3*>(finPb->Get("jet-lund-reclustering"+suffPb+"/h3PtEtaPhi_JClus"));// maybe better to take the weighted...
 
   TH1 *h1SigPtVac = h3PtEtaPhiVac->Project3D("x");
   TH1 *h1SigPtMed = h3PtEtaPhiMed->Project3D("x");
@@ -54,17 +66,27 @@ void plotRgs(TString strInPP, TString strInPb, TString suff){
   double normPb = PtNorm[1];
 
   h1RgSigPP->Sumw2();
-  h1RgSigPP->Scale(1./normPP,"width");// norm C/A
-  h1RgSigPb->Scale(1./normPb,"width");// norm C/A
+  h1RgSigPPH->Sumw2();
+  h1RgSigPPS->Sumw2();
+  h1RgSigPP->Scale(1./normPP,"width");// clustered jets
+  h1RgSigPb->Scale(1./normPb,"width");
+  h1RgSigPPH->Scale(1./normPP,"width");
+  h1RgSigPbH->Scale(1./normPb,"width");
+  h1RgSigPPS->Scale(1./normPP,"width");
+  h1RgSigPbS->Scale(1./normPb,"width");
 
-  //Clone normed histograms for ratios
+  // Clone normed histograms for ratios
   TH1 *h1PgSigClone = dynamic_cast<TH1*>(h1RgSigPb->Clone("h1RgCASigClone"));
   TH1 *h1PgSigClone2 = dynamic_cast<TH1*>(h1RgSigPb->Clone("h1RgCASigClone2"));
+  TH1 *h1PgSigCloneH = dynamic_cast<TH1*>(h1RgSigPbH->Clone("h1RgCASigCloneH"));
+  TH1 *h1PgSigCloneH2 = dynamic_cast<TH1*>(h1RgSigPbH->Clone("h1RgCASigCloneH2"));
+  TH1 *h1PgSigCloneS = dynamic_cast<TH1*>(h1RgSigPbS->Clone("h1RgCASigCloneS"));
+  TH1 *h1PgSigCloneS2 = dynamic_cast<TH1*>(h1RgSigPbS->Clone("h1RgCASigCloneS2"));
 
-  //Canvas for CA
-  TCanvas *cRg = new TCanvas("cRgRatio"+suff,"cRgRatio"+suff,600,500);
-  TPad *pad1 = new TPad("pad1", "pad1", 0, 0.3, 1, 1);
-  pad1->SetBottomMargin(0);
+  // Canvas for LP
+  TCanvas *cRg = new TCanvas("cRgRatio","cRgRatio",600,500);
+  TPad *pad1 = new TPad("pad1", "pad1", 0.05, 0.3, 0.35, 1);
+  //pad1->SetBottomMargin(0);
   pad1->Draw();
   pad1->cd();
   h1RgSigPP->SetStats(0);
@@ -77,16 +99,55 @@ void plotRgs(TString strInPP, TString strInPb, TString suff){
   h1RgSigPP->Draw("E");
   h1RgSigPb->SetLineColor(kBlue);
   h1RgSigPb->SetMarkerColor(kBlue);
-  h1RgSigPb->SetMarkerStyle(26);
+  h1RgSigPb->SetMarkerStyle(24);
   h1RgSigPb->Draw("Esame");
-
+  DrawLatex(0.23,0.85, "1st splits (LP) reclustering", 0.05);
+  DrawLatex(0.23,0.75, "transition", 0.05);
   TLegend *legRg = CreateLegend(0.25, 0.45, 0.55, 0.72);
-  DrawLatex(0.23,0.75, "1st splits (LP) reclustering", 0.05);
-  legRg->AddEntry(h1RgSigPP,"pp","lp");
-  legRg->AddEntry(h1RgSigPb,"Pb","lp");
+  legRg->AddEntry(h1RgSigPP,"pp","l");
+  legRg->AddEntry(h1RgSigPb,"Pb","l");
   legRg->Draw();
+  cRg->cd();
 
-  DrawLatex(0.3, 0.45, suff , 0.05);
+  TPad *pad12 = new TPad("pad12", "pad12", 0.37, 0.3, 0.67, 1);
+  //pad12->SetBottomMargin(0);
+  pad12->Draw();
+  pad12->cd();
+  h1RgSigPPH->SetStats(0);
+  h1RgSigPPH->GetYaxis()->SetTitle("#frac{1}{N_{jets, incl}} #frac{dN}{dR_{g}}");
+  h1RgSigPPH->GetXaxis()->SetTitle("R_{g} (SD angle)");
+  h1RgSigPPH->SetLineColor(kRed);
+  h1RgSigPPH->SetMarkerColor(kRed);
+  h1RgSigPPH->SetMarkerStyle(26);
+  h1RgSigPPH->SetTitle("");
+  h1RgSigPPH->Draw("E");
+  h1RgSigPbH->SetLineColor(kBlue);
+  h1RgSigPbH->SetMarkerColor(kBlue);
+  h1RgSigPbH->SetMarkerStyle(26);
+  h1RgSigPbH->Draw("Esame");
+  DrawLatex(0.23,0.75, "hard", 0.05);
+  cRg->cd();
+  TPad *pad13 = new TPad("pad13", "pad13", 0.69, 0.3, 0.99, 1);
+  //pad13->SetBottomMargin(0);
+  pad13->Draw();
+  pad13->cd();
+  h1RgSigPPS->SetStats(0);
+  h1RgSigPPS->GetYaxis()->SetTitle("#frac{1}{N_{jets, incl}} #frac{dN}{dR_{g}}");
+  h1RgSigPPS->GetXaxis()->SetTitle("R_{g} (SD angle)");
+  h1RgSigPPS->SetLineColor(kRed);
+  h1RgSigPPS->SetMarkerColor(kRed);
+  h1RgSigPPS->SetMarkerStyle(25);
+  h1RgSigPPS->SetTitle("");
+  h1RgSigPPS->Draw("E");
+  h1RgSigPbS->SetLineColor(kBlue);
+  h1RgSigPbS->SetMarkerColor(kBlue);
+  h1RgSigPbS->SetMarkerStyle(25);
+  h1RgSigPbS->Draw("Esame");
+  DrawLatex(0.23,0.75, "soft", 0.05);
+  cRg->cd();
+
+
+  //DrawLatex(0.3, 0.45, suff , 0.05);
   
   //DrawLatex(0.5, 0.8, "JEWEL @ #sqrt{s} = ...TeV");
   //DrawLatex(0.5, 0.72, "R = 0.4, |#eta_{jet}| #leq 2 ", 0.05);
@@ -104,6 +165,7 @@ void plotRgs(TString strInPP, TString strInPb, TString suff){
   h1PgSigClone->SetTitle("");
   h1PgSigClone->SetStats(0);
   h1PgSigClone->GetYaxis()->SetRangeUser(0, 1.2);
+  h1PgSigClone->GetXaxis()->SetRangeUser(0, 0.4);
   h1PgSigClone->GetYaxis()->SetTitle("med/vac");
   h1PgSigClone->GetXaxis()->SetTitle("R_{g} (SD angle)"); 
   h1PgSigClone->GetXaxis()->SetLabelSize(0.09);
@@ -112,17 +174,32 @@ void plotRgs(TString strInPP, TString strInPb, TString suff){
   h1PgSigClone->GetYaxis()->SetTitleSize(0.09);
   h1PgSigClone->GetYaxis()->SetTitleOffset(0.4);
   h1PgSigClone->SetLineColor(kBlack);
+  h1PgSigClone->SetMarkerColor(kBlack);
+  h1PgSigClone->SetMarkerStyle(24);
   h1PgSigClone->Draw("L");
-
-  cRg->SaveAs("Rg_ratio_"+suff+".png");
+  h1PgSigCloneH->Divide(h1RgSigPPH);
+  h1PgSigCloneH->SetMarkerColor(kRed);
+  h1PgSigCloneH->SetMarkerStyle(26);
+  h1PgSigCloneH->SetLineColor(kRed);
+  h1PgSigCloneH->Draw("Lsame");
+  h1PgSigCloneS->Divide(h1RgSigPPS);
+  h1PgSigCloneS->SetMarkerStyle(25);
+  h1PgSigCloneS->SetMarkerColor(kBlue);
+  h1PgSigCloneS->SetLineColor(kBlue);
+  h1PgSigCloneS->Draw("Lsame");
+  TLegend *legRg2 = CreateLegend(0.75, 0.95, 0.35, 0.72);
+  legRg2->AddEntry(h1PgSigClone,"transition","lp");
+  legRg2->AddEntry(h1PgSigCloneH,"hard","lp");
+  legRg2->AddEntry(h1PgSigCloneS,"soft","lp");
+  legRg2->Draw();
+  cRg->SaveAs("Rg_ratio.png");
 
 }
 
-void plotPtEtaPhi(TString strIn, TString suff){
+void plotPtEtaPhi(TString strIn){
   TFile *fin = new TFile(strIn.Data());
-  std::cout<< "Plot QA info for"<<suff<<std::endl;
-
   TString suffix = createSuffix(strIn);
+  std::cout<< "Plot QA info for "<<suffix<<std::endl;
 
   TH3 *h3Clus = dynamic_cast<TH3*>(fin->Get("jet-lund-reclustering"+suffix+"/h3PtEtaPhi_JClus"));// pt, eta, phi
   TH3 *h3Recl = dynamic_cast<TH3*>(fin->Get("jet-lund-reclustering"+suffix+"/h3PtEtaPhi_JRecl"));
@@ -147,22 +224,22 @@ void plotPtEtaPhi(TString strIn, TString suff){
     //gPad->SetLogz();
     h2ClusEtaPhi->SetTitle("JetClustered");
     h2ClusEtaPhi->Draw("colz same");
-    DrawLatex(0.45, 0.85, suff, 0.04);
+    DrawLatex(0.45, 0.85, suffix, 0.04);
     ptCorr->cd(2);
     //gPad->SetLogz();
     h2ReclEtaPhi->SetTitle("JetReclustered (LP)");
     h2ReclEtaPhi->Draw("colz same");
-    DrawLatex(0.45, 0.85, suff, 0.04);
+    DrawLatex(0.45, 0.85, suffix, 0.04);
     ptCorr->cd(3);
     //gPad->SetLogz();
     h2RejEtaPhi->SetTitle("JetRejected");
     h2RejEtaPhi->Draw("colz same");
-    DrawLatex(0.45, 0.85, suff, 0.04);
+    DrawLatex(0.45, 0.85, suffix, 0.04);
     ptCorr->cd(4);
     h2ReclSubEtaPhi->SetTitle("JetReclustered (SD)");
     h2ReclSubEtaPhi->Draw("colz same");
-    DrawLatex(0.45, 0.85, suff, 0.04);
-    ptCorr->SaveAs("QA_Correlation_"+p+"_"+suff+"_"+".png");
+    DrawLatex(0.45, 0.85, suffix, 0.04);
+    ptCorr->SaveAs("QA_Correlation_"+p+"_"+suffix+"_"+".png");
   }
   //Pt
   TH1 *h1ClusPt = h3Clus->ProjectionX();
@@ -177,11 +254,11 @@ void plotPtEtaPhi(TString strIn, TString suff){
   legPt->AddEntry(h1RejPt,"Rejected Jet ","l");
   legPt->AddEntry(h1ReclSubPt,"Reclustered Jet (SD)","l");
   legPt->Draw();
-  TCanvas *cPt = new TCanvas("cPt_"+suff,"cPt_"+suff,500,400);
+  TCanvas *cPt = new TCanvas("cPt_"+suffix,"cPt_"+suffix,500,400);
   TH1F *frPt = DrawFrame(0.,1.,0.,1., "#it{p}_{T} [GeV/#it{c}]", "number of entries");
   gPad->SetLogy();
   h1ClusPt->SetStats(0);
-  h1ClusPt->SetTitle(suff);
+  h1ClusPt->SetTitle(suffix);
   h1ClusPt->GetYaxis()->SetTitle("number of entries");
   h1ClusPt->GetXaxis()->SetTitle("#it{p}_{T} [GeV/#it{c}]");
   h1ClusPt->SetLineColor(kRed);
@@ -193,13 +270,13 @@ void plotPtEtaPhi(TString strIn, TString suff){
   h1ReclSubPt->SetLineColor(kBlack);
   h1ReclSubPt->Draw("Esame");
   legPt->Draw();
-  cPt->SaveAs("QA_Jet_Pt_"+suff+".png");
+  cPt->SaveAs("QA_Jet_Pt_"+suffix+".png");
   //Eta
   TH1 *h1ClusEta = h3Clus->ProjectionY();
   TH1 *h1ReclEta = h3Recl->ProjectionY();
   TH1 *h1RejEta = h3Rej->ProjectionY();
   TH1 *h1ReclSubEta = h3ReclSub->ProjectionY();
-  TCanvas *cEta = new TCanvas("cEta_"+suff,"cEta_"+suff,500,400);
+  TCanvas *cEta = new TCanvas("cEta_"+suffix,"cEta_"+suffix,500,400);
   TH1F *frEta = DrawFrame(0.,1.,0.,1., "#eta", "number of entries");
   //gPad->SetLogy();
   h1ClusEta->SetStats(0);
@@ -215,13 +292,13 @@ void plotPtEtaPhi(TString strIn, TString suff){
   h1ReclSubEta->SetLineColor(kBlack);
   h1ReclSubEta->Draw("Esame");
   legPt->Draw();
-  cEta->SaveAs("QA_Jet_Eta_"+suff+".png");
+  cEta->SaveAs("QA_Jet_Eta_"+suffix+".png");
   //Phi
   TH1 *h1ClusPhi = h3Clus->ProjectionZ();
   TH1 *h1ReclPhi = h3Recl->ProjectionZ();
   TH1 *h1RejPhi = h3Rej->ProjectionZ();
   TH1 *h1ReclSubPhi = h3ReclSub->ProjectionZ();
-  TCanvas *cPhi = new TCanvas("cPhi_"+suff,"cPhi_"+suff,500,400);
+  TCanvas *cPhi = new TCanvas("cPhi_"+suffix,"cPhi_"+suffix,500,400);
   TH1F *frPhi = DrawFrame(0.,1.,0.,1.,"#phi [rad]", "number of entries");
   //gPad->SetLogy();
   h1ClusPhi->SetStats(0);
@@ -237,7 +314,7 @@ void plotPtEtaPhi(TString strIn, TString suff){
   h1ReclSubPhi->SetLineColor(kBlack);
   h1ReclSubPhi->Draw("Esame");
   legPt->Draw();
-  cEta->SaveAs("QA_Jet_Phi_"+suff+".png");
+  cEta->SaveAs("QA_Jet_Phi_"+suffix+".png");
 
 }
 
@@ -405,73 +482,228 @@ void doRaaRanges(TString strInPP, TString strInPb, TString strInPPShort, TString
   TString suffPS = createSuffix(strInPPShort);
   //all
   TH3 *h3PtEtaPhiVac = dynamic_cast<TH3*>(finPP->Get("jet-lund-reclustering"+suffP+"/h3PtEtaPhi_JRecl"));// unweighted..histograms with tau veto LP
+  h3PtEtaPhiVac->SetDirectory(0); 
   TH3 *h3PtEtaPhiMed = dynamic_cast<TH3*>(finPb->Get("jet-lund-reclustering"+suffPb+"/h3PtEtaPhi_JRecl"));//maybe better to take the weighted..
+  h3PtEtaPhiMed->SetDirectory(0); 
   TH1 *p = h3PtEtaPhiVac->Project3D("x");
+  p->SetDirectory(0); 
   TH1 *Pb = h3PtEtaPhiMed->Project3D("x");
+  Pb->SetDirectory(0); 
+
   std::array<double, 2> PtNorm = getNorm(p, Pb);
   double normPP = PtNorm[0];
   double normPb = PtNorm[1];
   p->Scale(1/normPP, "width");
   Pb->Scale(1/normPb, "width");
-  TH1* h1SigPtWp = (TH1*)p->Clone();
-  TH1* h1SigPtWPb = (TH1*)Pb->Clone();
+
+  TH1 *h1SigPtWp = (TH1*)p->Clone("h1SigPtWp");
+  h1SigPtWp->SetDirectory(0);
+  TH1 *h1SigPtWPb = (TH1*)Pb->Clone("h1SigPtWPb");
+  h1SigPtWPb->SetDirectory(0);
+
+  TLegend *leg1I = CreateLegend(0.45, 0.95, 0.7, 0.95);
+  leg1I->SetTextSize(0.03);
+
+  TCanvas *cPtI = new TCanvas("cPtI_"+recluster,"cPtI_"+recluster,600,500);
+  cPtI->Divide(2,1);
+  cPtI->cd(1);
+  TH1F *frPtI = DrawFrame(0.,1.,0.,1, "#it{p}_{T} [GeV/#it{c}]", "number of entries");
+  gPad->SetLogy();
+  h1SigPtWp->SetTitle("");
+  h1SigPtWp->GetYaxis()->SetTitle("normierte spectra");
+  h1SigPtWp->GetXaxis()->SetTitle("#it{p}_{T,jet} [GeV/#it{c}]");
+  h1SigPtWp->SetLineColor(kBlack);
+  h1SigPtWp->SetLineStyle(1);
+  h1SigPtWp->SetLineWidth(2);  
+  h1SigPtWp->GetXaxis()->SetRangeUser(0, 100);
+  leg1I->AddEntry(h1SigPtWp,"pp","l");
+  h1SigPtWp->DrawClone("L");
+  cPtI->cd(2);
+  TH1F *frPtI2 = DrawFrame(0.,1.,0.,1, "#it{p}_{T} [GeV/#it{c}]", "number of entries");
+  gPad->SetLogy();
+  h1SigPtWPb->SetTitle("");
+  h1SigPtWPb->GetXaxis()->SetRangeUser(0, 100);
+  h1SigPtWPb->GetYaxis()->SetTitle("normierte spectra");
+  h1SigPtWPb->GetXaxis()->SetTitle("#it{p}_{T,jet} [GeV/#it{c}]");
+  h1SigPtWPb->SetLineColor(kRed);
+  h1SigPtWPb->SetLineStyle(4);
+  h1SigPtWPb->SetLineWidth(2); 
+  leg1I->AddEntry(h1SigPtWPb,"PbPb","l");
+  h1SigPtWPb->DrawClone("L");
+  leg1I->Draw();
+  cPtI->SaveAs("Raa_checkPPvsPbSpectra_incl_"+recluster+".png");
 
   //large 
   TH3 *h3PtEtaPhiVacL = dynamic_cast<TH3*>(finPPL->Get("jet-lund-reclustering"+suffPL+"/h3PtEtaPhi_JRecl"));// unweighted..histograms with tau veto LP
+  h3PtEtaPhiVacL->SetDirectory(0); 
   TH3 *h3PtEtaPhiMedL = dynamic_cast<TH3*>(finPbL->Get("jet-lund-reclustering"+suffPbL+"/h3PtEtaPhi_JRecl"));//maybe better to take the weighted..
+  h3PtEtaPhiMedL->SetDirectory(0); 
   TH1 *Lp = h3PtEtaPhiVacL->Project3D("x");
+  Lp->SetDirectory(0);
   TH1 *LPb = h3PtEtaPhiMedL->Project3D("x");
+  LPb->SetDirectory(0);
   std::array<double, 2> LNorm = getNorm(Lp, LPb);
   Lp->Scale(1/LNorm[0], "width");
   LPb->Scale(1/LNorm[1], "width");
-  TH1* h1SigPtWpL = (TH1*)Lp->Clone();
-  TH1* h1SigPtWPbL = (TH1*)LPb->Clone();
+  TH1* h1SigPtWpL = (TH1*)Lp->Clone("h1SigPtWpL");
+  h1SigPtWpL->SetDirectory(0);
+  TH1* h1SigPtWPbL = (TH1*)LPb->Clone("h1SigPtWPbL");
+  h1SigPtWPbL->SetDirectory(0);
+ 
+  TLegend *leg1L = CreateLegend(0.45, 0.95, 0.7, 0.95);
+  leg1L->SetTextSize(0.03);
+
+  TCanvas *cPtL = new TCanvas("cPtL_"+recluster,"cPtL_"+recluster,600,500);
+  cPtL->Divide(2,1);
+  cPtL->cd(1);
+  TH1F *frPtL= DrawFrame(0.,1.,0.,1, "#it{p}_{T} [GeV/#it{c}]", "number of entries");
+  gPad->SetLogy();
+  h1SigPtWpL->SetTitle("");
+  h1SigPtWpL->GetYaxis()->SetTitle("normierte spectra");
+  h1SigPtWpL->GetXaxis()->SetTitle("#it{p}_{T,jet} [GeV/#it{c}]");
+  h1SigPtWpL->SetLineColor(kBlack);
+  h1SigPtWpL->SetLineStyle(1);
+  h1SigPtWpL->SetLineWidth(2);  
+  h1SigPtWpL->GetXaxis()->SetRangeUser(0, 100);
+  leg1L->AddEntry(h1SigPtWpL,"pp","l");
+  h1SigPtWpL->DrawClone("L");
+  cPtL->cd(2);
+  TH1F *frPtL2 = DrawFrame(0.,1.,0.,1, "#it{p}_{T} [GeV/#it{c}]", "number of entries");
+  gPad->SetLogy();
+  h1SigPtWPbL->SetTitle("");
+  h1SigPtWPbL->GetXaxis()->SetRangeUser(0, 100);
+  h1SigPtWPbL->GetYaxis()->SetTitle("normierte spectra");
+  h1SigPtWPbL->GetXaxis()->SetTitle("#it{p}_{T,jet} [GeV/#it{c}]");
+  h1SigPtWPbL->SetLineColor(kRed);
+  h1SigPtWPbL->SetLineStyle(4);
+  h1SigPtWPbL->SetLineWidth(2); 
+  leg1L->AddEntry(h1SigPtWPbL,"PbPb","l");
+  h1SigPtWPbL->DrawClone("L");
+  leg1L->Draw();
+  cPtL->SaveAs("Raa_checkPPvsPbSpectra_large"+recluster+".png");
 
   //short
   TH3 *h3PtEtaPhiVacS = dynamic_cast<TH3*>(finPPS->Get("jet-lund-reclustering"+suffPS+"/h3PtEtaPhi_JRecl"));// unweighted..histograms with tau veto LP
+  h3PtEtaPhiVacS->SetDirectory(0); 
   TH3 *h3PtEtaPhiMedS = dynamic_cast<TH3*>(finPbS->Get("jet-lund-reclustering"+suffPbS+"/h3PtEtaPhi_JRecl"));//maybe better to take the weighted..
+  h3PtEtaPhiMedS->SetDirectory(0); 
   TH1 *Sp = h3PtEtaPhiVacS->Project3D("x");
+  Sp->SetDirectory(0);
   TH1 *SPb = h3PtEtaPhiMedS->Project3D("x");
+  Sp->SetDirectory(0);
   std::array<double, 2> SNorm = getNorm(Sp, SPb);
   Sp->Scale(1/SNorm[0], "width");
   SPb->Scale(1/SNorm[1], "width");
-  TH1* h1SigPtWpS = (TH1*)Sp->Clone();
-  TH1* h1SigPtWPbS = (TH1*)SPb->Clone();
+  TH1* h1SigPtWpS = (TH1*)Sp->Clone("h1SigPtWpS");
+  h1SigPtWpS->SetDirectory(0);
+  TH1* h1SigPtWPbS = (TH1*)SPb->Clone("h1SigPtWPbS");
+  h1SigPtWPbS->SetDirectory(0);
+
+  TLegend *leg1S = CreateLegend(0.45, 0.95, 0.7, 0.95);
+  leg1S->SetTextSize(0.03);
+
+  TCanvas *cPtS = new TCanvas("cPtS_"+recluster,"cPtS_"+recluster,600,500);
+  cPtS->Divide(2,1);
+  cPtS->cd(1);
+  TH1F *frPtS = DrawFrame(0.,1.,0.,1, "#it{p}_{T} [GeV/#it{c}]", "number of entries");
+  gPad->SetLogy();
+  h1SigPtWpS->SetTitle("");
+  h1SigPtWpS->GetYaxis()->SetTitle("normierte spectra");
+  h1SigPtWpS->GetXaxis()->SetTitle("#it{p}_{T,jet} [GeV/#it{c}]");
+  h1SigPtWpS->SetLineColor(kBlack);
+  h1SigPtWpS->SetLineStyle(1);
+  h1SigPtWpS->SetLineWidth(2);  
+  h1SigPtWpS->GetXaxis()->SetRangeUser(0, 100);
+  leg1S->AddEntry(h1SigPtWpS,"pp","l");
+  h1SigPtWpS->DrawClone("L");
+  cPtS->cd(2);
+  TH1F *frPtS2 = DrawFrame(0.,1.,0.,1, "#it{p}_{T} [GeV/#it{c}]", "number of entries");
+  gPad->SetLogy();
+  h1SigPtWPbS->SetTitle("");
+  h1SigPtWPbS->GetXaxis()->SetRangeUser(0, 100);
+  h1SigPtWPbS->GetYaxis()->SetTitle("normierte spectra");
+  h1SigPtWPbS->GetXaxis()->SetTitle("#it{p}_{T,jet} [GeV/#it{c}]");
+  h1SigPtWPbS->SetLineColor(kRed);
+  h1SigPtWPbS->SetLineStyle(4);
+  h1SigPtWPbS->SetLineWidth(2); 
+  leg1S->AddEntry(h1SigPtWPbS,"PbPb","l");
+  h1SigPtWPbS->DrawClone("L");
+  leg1S->Draw();
+  cPtS->SaveAs("Raa_checkPPvsPbSpectra_small_"+recluster+".png");
 
   //intermed
-  TH3 *h3PtEtaPhiVacI = dynamic_cast<TH3*>(finPPI->Get("jet-lund-reclustering/"+suffPI+"h3PtEtaPhi_JRecl"));
+  TH3 *h3PtEtaPhiVacI = dynamic_cast<TH3*>(finPPI->Get("jet-lund-reclustering"+suffPI+"/h3PtEtaPhi_JRecl"));
+  h3PtEtaPhiVacI->SetDirectory(0); 
   TH3 *h3PtEtaPhiMedI = dynamic_cast<TH3*>(finPbI->Get("jet-lund-reclustering"+suffPbI+"/h3PtEtaPhi_JRecl"));
+  h3PtEtaPhiMedI->SetDirectory(0); 
   TH1 *Ip = h3PtEtaPhiVacI->Project3D("x");
+  Ip->SetDirectory(0);
   TH1 *IPb = h3PtEtaPhiMedI->Project3D("x");
+  IPb->SetDirectory(0);
   std::array<double, 2> INorm = getNorm(Ip, IPb);
   Ip->Scale(1/INorm[0], "width");
   IPb->Scale(1/INorm[1], "width");
-  TH1* h1SigPtWpI = (TH1*)Ip->Clone();
-  TH1* h1SigPtWPbI = (TH1*)IPb->Clone();
+  TH1* h1SigPtWpI = (TH1*)Ip->Clone("h1SigPtWpI");
+  h1SigPtWpI->SetDirectory(0);
+  TH1* h1SigPtWPbI = (TH1*)IPb->Clone("h1SigPtWPbI");
+  h1SigPtWPbI->SetDirectory(0);
+
+  TLegend *leg1II = CreateLegend(0.45, 0.95, 0.7, 0.95);
+  leg1II->SetTextSize(0.03);
+
+  TCanvas *cPtII = new TCanvas("cPtII_"+recluster,"cPtII_"+recluster,600,500);
+  cPtII->Divide(2,1);
+  cPtII->cd(1);
+  TH1F *frPtII = DrawFrame(0.,1.,0.,1, "#it{p}_{T} [GeV/#it{c}]", "number of entries");
+  gPad->SetLogy();
+  h1SigPtWpI->SetTitle("");
+  h1SigPtWpI->GetXaxis()->SetRangeUser(0, 100);
+  h1SigPtWpI->GetYaxis()->SetTitle("normierte spectra");
+  h1SigPtWpI->GetXaxis()->SetTitle("#it{p}_{T,jet} [GeV/#it{c}]");
+  h1SigPtWpI->SetLineColor(kBlack);
+  h1SigPtWpI->SetLineStyle(1);
+  h1SigPtWpI->SetLineWidth(2);  
+  leg1II->AddEntry(h1SigPtWpI,"pp","l");
+  h1SigPtWpI->DrawClone("L");
+  cPtII->cd(2);
+  TH1F *frPtII2 = DrawFrame(0.,1.,0.,1, "#it{p}_{T} [GeV/#it{c}]", "number of entries");
+  gPad->SetLogy();
+  h1SigPtWPbI->SetTitle("");
+  h1SigPtWPbI->GetXaxis()->SetRangeUser(0, 100);
+  h1SigPtWPbI->GetYaxis()->SetTitle("normierte spectra");
+  h1SigPtWPbI->GetXaxis()->SetTitle("#it{p}_{T,jet} [GeV/#it{c}]");
+  h1SigPtWPbI->SetLineColor(kRed);
+  h1SigPtWPbI->SetLineStyle(4);
+  h1SigPtWPbI->SetLineWidth(2); 
+  leg1II->AddEntry(h1SigPtWPbI,"PbPb","l");
+  h1SigPtWPbI->DrawClone("L");
+  leg1II->Draw();
+  cPtII->SaveAs("Raa_checkPPvsPbSpectra_intermed_"+recluster+".png");
+
   //short vs large formation time
   TCanvas *cPt = new TCanvas(Form("cPt_%d",0),Form("cPt_%d",0),600,500);
   cPt->cd();
-  TH1F *frPt = DrawFrame(0.,1.,0.,1., "#it{p}_{T} [GeV/#it{c}]", "number of entries");
-  //gPad->SetLogy();
   h1SigPtWPbL->Sumw2();
-  h1SigPtWPbL->SetDirectory(0);
-  h1SigPtWPbL->SetStats(0);
-  h1SigPtWPbL->SetTitle(" ");
   h1SigPtWPbL->GetYaxis()->SetTitle("PbPb recl. #frac{1}{N_{jets, PbPb}}/pp recl. #frac{1}{N_{jets, pp}}");
   h1SigPtWPbL->GetXaxis()->SetTitle("#it{p}_{T} [GeV/#it{c}]");
+  h1SigPtWPbL->SetStats(0);
+  h1SigPtWPbL->SetTitle(" ");
   h1SigPtWPbL->Divide(h1SigPtWpL);
+  h1SigPtWPbL->SetDirectory(0);
   h1SigPtWPbL->SetLineColor(kBlack);
   h1SigPtWPbL->SetLineStyle(1);
   h1SigPtWPbL->SetLineWidth(2);  
-  h1SigPtWPbL->GetYaxis()->SetRangeUser(0, 2);
-  h1SigPtWPbL->GetXaxis()->SetRangeUser(0, 80);
+  h1SigPtWPbL->GetYaxis()->SetRangeUser(0, 10);
+  h1SigPtWPbL->GetXaxis()->SetRangeUser(0, 100);
   h1SigPtWPbL->Draw("HistL");
   h1SigPtWPbS->Divide(h1SigPtWpS);
+  h1SigPtWPbS->SetDirectory(0);
   h1SigPtWPbS->SetLineColor(kBlue);
   h1SigPtWPbS->SetLineStyle(4);
   h1SigPtWPbS->SetLineWidth(2); 
   h1SigPtWPbS->Draw("HistLsame");
   h1SigPtWPbI->Divide(h1SigPtWpI);
+  h1SigPtWPbI->SetDirectory(0);
   h1SigPtWPbI->SetLineColor(kGreen+2);
   h1SigPtWPbI->SetLineStyle(4);
   h1SigPtWPbI->SetLineWidth(2); 
@@ -482,9 +714,10 @@ void doRaaRanges(TString strInPP, TString strInPb, TString strInPPShort, TString
   h1SigPtWPb->SetLineWidth(2); 
   h1SigPtWPb->Draw("HistLsame");
 
-  TLegend *leg1 = CreateLegend(0.25, 0.85, 0.73, 0.95);
+  DrawLatex(0.2,0.8, recluster, 0.04);
+  TLegend *leg1 = CreateLegend(0.7, 0.9, 0.3, 0.9);
   leg1->SetTextSize(0.03);
-  leg1->SetNColumns(2);
+  //leg1->SetNColumns(2);
   leg1->AddEntry(h1SigPtWPbL,"#tau > 3 (LP)","l");
   leg1->AddEntry(h1SigPtWPbS,"#tau < 1 (LP) ","l");
   leg1->AddEntry(h1SigPtWPb,"incl. #tau < 20 (LP)","l");
@@ -493,69 +726,6 @@ void doRaaRanges(TString strInPP, TString strInPb, TString strInPPShort, TString
 
   cPt->SaveAs("RaaRanges_"+recluster+".png");
  
-  TCanvas *cPtI = new TCanvas(Form("cPtI_%d",0),Form("cPtI_%d",0),600,500);
-  TH1F *frPtI = DrawFrame(0.,1.,0.,1., "#it{p}_{T} [GeV/#it{c}]", "number of entries");
-  //gPad->SetLogy();
-  p->Sumw2();
-  p->SetStats(0);
-  p->SetTitle("");
-  p->GetYaxis()->SetTitle("normierte spectra");
-  p->GetXaxis()->SetTitle("#it{p}_{T} [GeV/#it{c}]");
- // h1SigPtWPb->Divide(h1SigPtWp);
-  p->SetLineColor(kBlack);
-  p->SetLineStyle(1);
-  p->SetLineWidth(2);  
-  //h1SigPtWPb->GetYaxis()->SetRangeUser(0., 1.5);
-  //h1SigPtWPb->GetXaxis()->SetRangeUser(110, 400);
-  p->DrawCopy("HistL");
-  Pb->SetLineColor(kRed);
-  Pb->SetLineStyle(4);
-  Pb->SetLineWidth(2); 
-  Pb->DrawCopy("HistLsame");
-
-  TLegend *leg1I = CreateLegend(0.25, 0.85, 0.7, 0.95);
-  leg1I->SetTextSize(0.03);
-  leg1I->SetNColumns(3);
-  leg1I->AddEntry(Pb,"red PbPb","l");
-  leg1I->AddEntry(p,"black pp","l");
-  
-  leg1I->Draw();
-
-  cPtI->SaveAs("Raa_checkPPvsPbSpectra"+recluster+".png");
-/*
-  TCanvas *cPt1 = new TCanvas(Form("cPt1_%d",0),Form("cPt1_%d",0),600,500);
-  TH1F *frPt1 = DrawFrame(0.,1.,0.,1., "#it{p}_{T} [GeV/#it{c}]", "number of entries");
-  h1SigPtWPb->SetStats(0);
-  h1SigPtWPb->SetTitle("");
-  h1SigPtWPb->GetYaxis()->SetTitle("#sigma_{simple}/#sigma_{vac} (weighted spectra)");
-  h1SigPtWPb->GetXaxis()->SetTitle("#it{p}_{T} [GeV/#it{c}]");
-  h1SigPtWPb->GetYaxis()->SetRangeUser(-0.2,4);
-  h1SigPtWPb->Draw("L");
-  cPt1->SaveAs("Raa_Sig.png");
-
-
-  TCanvas *cPt2 = new TCanvas(Form("cPt2_%d",0),Form("cPt2_%d",0),600,500);
-
-  TH1F *frPt2 = DrawFrame(0.,1.,0.,1., "#it{p}_{T} [GeV/#it{c}]", "number of entries");
-  h1JsigTauPtWPb->SetStats(0);
-  h1JsigTauPtWPb->SetTitle("");
-  h1JsigTauPtWPb->GetYaxis()->SetTitle("#sigma_{simple}/#sigma_{vac} (weighted spectra)");
-  h1JsigTauPtWPb->GetXaxis()->SetTitle("#it{p}_{T} [GeV/#it{c}]");
-  h1JsigTauPtWPb->GetYaxis()->SetRangeUser(-0.2,4);
-  h1JsigTauPtWPb->Draw("L");
-  cPt2->SaveAs("Raa_Tau.png");
-
-  TCanvas *cPt3 = new TCanvas(Form("cPt3_%d",0),Form("cPt3_%d",0),600,500);
-
-  TH1F *frPt3 = DrawFrame(0.,1.,0.,1., "#it{p}_{T} [GeV/#it{c}]", "number of entries");
-  h1JsigCAPtWPb->SetStats(0);
-  h1JsigCAPtWPb->SetTitle("");
-  h1JsigCAPtWPb->GetYaxis()->SetTitle("#sigma_{simple}/#sigma_{vac} (weighted spectra)");
-  h1JsigCAPtWPb->GetXaxis()->SetTitle("#it{p}_{T} [GeV/#it{c}]");
-  h1JsigCAPtWPb->GetYaxis()->SetRangeUser(-0.2,4);
-  h1JsigCAPtWPb->Draw("L");
-  cPt3->SaveAs("Raa_CA.png");
-*/
 }
 
 
@@ -579,41 +749,41 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   TH2 *h2Rg2H = dynamic_cast<TH2*>(finH->Get("jet-lund-reclustering"+sufH+"/h2RgTfSplit_2"));//  R_{g}; #tau_{form}
   TH2 *h2Rg2S = dynamic_cast<TH2*>(finS->Get("jet-lund-reclustering"+sufS+"/h2RgTfSplit_2"));//  R_{g}; #tau_{form}
   TH2 *h2Rg2T = dynamic_cast<TH2*>(finT->Get("jet-lund-reclustering"+sufT+"/h2RgTfSplit_2"));//  R_{g}; #tau_{form}
-  TCanvas *r1 = new TCanvas("r1","r1",1000,600);
-  r1->Divide(3,2);
-  r1->cd(1);//TH1F *rg = DrawFrame(0.,1.,0.,10.,"R_{g}","#tau_{form}");
+  TCanvas *cooRgTF = new TCanvas("cooRgTF_"+suff,"cooRgTF_"+suff,1000,600);
+  cooRgTF->Divide(3,2);
+  cooRgTF->cd(1);//TH1F *rg = DrawFrame(0.,1.,0.,10.,"R_{g}","#tau_{form}");
   gPad->SetLogz();
   h2Rg21H->SetTitle("(1st split) hard limit");
   h2Rg21H->Draw("colz same");
   DrawLatex(0.45, 0.85, suff, 0.04);
-  r1->cd(2);
+  cooRgTF->cd(2);
   gPad->SetLogz();
   h2Rg21S->SetTitle("(1st split) soft limit");
   h2Rg21S->Draw("colz same");
   DrawLatex(0.45, 0.85, suff, 0.04);
-  r1->cd(3);
+  cooRgTF->cd(3);
   gPad->SetLogz();
   h2Rg21T->SetTitle("(1st split) transition of limit");
   h2Rg21T->Draw("colz same");
   DrawLatex(0.45, 0.85, suff, 0.04);
-  r1->cd(4);
+  cooRgTF->cd(4);
   gPad->SetLogz();
   h2Rg2H->SetTitle("(2nd split) hard limit");
   h2Rg2H->Draw("colz same");
   DrawLatex(0.45, 0.85, suff, 0.04);
-  r1->cd(5);
+  cooRgTF->cd(5);
   gPad->SetLogz();
   h2Rg2S->SetTitle("(2nd split) soft limit");
   h2Rg2S->Draw("colz same");
   DrawLatex(0.45, 0.85, suff, 0.04);
-  r1->cd(6);
+  cooRgTF->cd(6);
   gPad->SetLogz();
   h2Rg2T->SetTitle("(2nd split) transition of limit");
   h2Rg2T->Draw("colz same");
   DrawLatex(0.45, 0.85, suff, 0.04);
 
-  r1->cd();
-  r1->SaveAs("Correlation1st2ndSplit_RgTf_"+suff+".png");
+  cooRgTF->cd();
+  cooRgTF->SaveAs("Correlation1st2ndSplit_RgTf_"+suff+".png");
 
   TH2 *h2Zg21H = dynamic_cast<TH2*>(finH->Get("jet-lund-reclustering"+sufH+"/h2ZgTfSplit_1"));//  R_{g}; #tau_{form}
   TH2 *h2Zg21S = dynamic_cast<TH2*>(finS->Get("jet-lund-reclustering"+sufS+"/h2ZgTfSplit_1"));//  R_{g}; #tau_{form}
@@ -622,39 +792,39 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   TH2 *h2Zg2H = dynamic_cast<TH2*>(finH->Get("jet-lund-reclustering"+sufH+"/h2ZgTfSplit_2"));//  R_{g}; #tau_{form}
   TH2 *h2Zg2S = dynamic_cast<TH2*>(finS->Get("jet-lund-reclustering"+sufS+"/h2ZgTfSplit_2"));//  R_{g}; #tau_{form}
   TH2 *h2Zg2T = dynamic_cast<TH2*>(finT->Get("jet-lund-reclustering"+sufT+"/h2ZgTfSplit_2"));//  R_{g}; #tau_{form}
-  TCanvas *z1 = new TCanvas("z1","z1",1000,600);
-  z1->Divide(3,2);
-  z1->cd(1);//TH1F *rg = DrawFrame(0.,1.,0.,10.,"R_{g}","#tau_{form}");
+  TCanvas *corrZgTf = new TCanvas("corrZgTf_"+suff,"corrZgTf_"+suff,1000,600);
+  corrZgTf->Divide(3,2);
+  corrZgTf->cd(1);//TH1F *rg = DrawFrame(0.,1.,0.,10.,"R_{g}","#tau_{form}");
   gPad->SetLogz();
   h2Zg21H->SetTitle("(1st split) hard limit");
   h2Zg21H->Draw("colz same");
   DrawLatex(0.45, 0.85, suff, 0.04);
-  z1->cd(2);
+  corrZgTf->cd(2);
   gPad->SetLogz();
   h2Zg21S->SetTitle("(1st split) soft limit");
   h2Zg21S->Draw("colz same");
   DrawLatex(0.45, 0.85, suff, 0.04);
-  z1->cd(3);
+  corrZgTf->cd(3);
   gPad->SetLogz();
   h2Zg21T->SetTitle("(1st split) transition of limit");
   h2Zg21T->Draw("colz same");
   DrawLatex(0.45, 0.85, suff, 0.04);
-  z1->cd(4);
+  corrZgTf->cd(4);
   gPad->SetLogz();
   h2Zg2H->SetTitle("(2nd split) hard limit");
   h2Zg2H->Draw("colz same");
   DrawLatex(0.45, 0.85, suff, 0.04);
-  z1->cd(5);
+  corrZgTf->cd(5);
   gPad->SetLogz();
   h2Zg2S->SetTitle("(2nd split) soft limit");
   h2Zg2S->Draw("colz same");
   DrawLatex(0.45, 0.85, suff, 0.04);
-  z1->cd(6);
+  corrZgTf->cd(6);
   gPad->SetLogz();
   h2Zg2T->SetTitle("(2nd split) transition of limit");
   h2Zg2T->Draw("colz same");
   DrawLatex(0.45, 0.85, suff, 0.04);
-  z1->SaveAs("Correlation1st2ndSplit_ZgTf_"+suff+".png");
+  corrZgTf->SaveAs("Correlation1st2ndSplit_ZgTf_"+suff+".png");
 
   TH2 *h2g21H = dynamic_cast<TH2*>(finH->Get("jet-lund-reclustering"+sufH+"/h2ZgRgSplit_1"));
   TH2 *h2g21S = dynamic_cast<TH2*>(finS->Get("jet-lund-reclustering"+sufS+"/h2ZgRgSplit_1"));
@@ -662,39 +832,39 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   TH2 *h2g2H = dynamic_cast<TH2*>(finH->Get("jet-lund-reclustering"+sufH+"/h2ZgRgSplit_2"));
   TH2 *h2g2S = dynamic_cast<TH2*>(finS->Get("jet-lund-reclustering"+sufS+"/h2ZgRgSplit_2"));
   TH2 *h2g2T = dynamic_cast<TH2*>(finT->Get("jet-lund-reclustering"+sufT+"/h2ZgRgSplit_2"));
-  TCanvas *g1 = new TCanvas("g1","g1",1000,600);
-  g1->Divide(3,2);
-  g1->cd(1);
+  TCanvas *corrRgZg = new TCanvas("corrRgZg_"+suff,"corrRgZg_"+suff,1000,600);
+  corrRgZg->Divide(3,2);
+  corrRgZg->cd(1);
   gPad->SetLogz();
   h2g21H->SetTitle("(1st split) hard limit");
   h2g21H->Draw("colz same");
   DrawLatex(0.45, 0.85, suff, 0.04);
-  g1->cd(2);
+  corrRgZg->cd(2);
   gPad->SetLogz();
   h2g21S->SetTitle("(1st split) soft limit");
   h2g21S->Draw("colz same");
   DrawLatex(0.45, 0.85, suff, 0.04);
-  g1->cd(3);
+  corrRgZg->cd(3);
   gPad->SetLogz();
   h2g21T->SetTitle("(1st split) transition of limit");
   h2g21T->Draw("colz same");
   DrawLatex(0.45, 0.85, suff, 0.04);
-  g1->cd(4);
+  corrRgZg->cd(4);
   gPad->SetLogz();
   h2g2H->SetTitle("(2nd split) hard limit");
   h2g2H->Draw("colz same");
   DrawLatex(0.45, 0.85, suff, 0.04);
-  g1->cd(5);
+  corrRgZg->cd(5);
   gPad->SetLogz();
   h2g2S->SetTitle("(2nd split) soft limit");
   h2g2S->Draw("colz same");
   DrawLatex(0.45, 0.85, suff, 0.04);
-  g1->cd(6);
+  corrRgZg->cd(6);
   gPad->SetLogz();
   h2g2T->SetTitle("(2nd split) transition of limit");
   h2g2T->Draw("colz same");
   DrawLatex(0.45, 0.85, suff, 0.04);
-  g1->SaveAs("Correlation1st2ndSplit_ZgRg_"+suff+".png");
+  corrRgZg->SaveAs("Correlation1st2ndSplit_ZgRg_"+suff+".png");
 
 
   TH1 *h1TfSigTau0 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1TfSplit_1"));//1st split - trans
@@ -721,6 +891,7 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   h1TfSigCA0->Draw("Esame");
 
   TLegend *legtf = CreateLegend(0.43, 0.78, 0.7, 0.9);
+  legtf->SetTextSize(0.04);
   legtf->AddEntry(h1TfSigTau0,"transition","l");
   legtf->AddEntry(h1TfSigTauSoft0,"hard","l");
   legtf->AddEntry(h1TfSigCA0,"soft","l");
@@ -753,9 +924,9 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   TH1 *h1ZgSigCA1soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1ZgSplit_2"));
   TH1 *h1ZgSigTau1 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1ZgSplit_2"));
 
-  TCanvas *cS = new TCanvas("cS_"+suff,"cS_"+suff,800,400);
-  cS->Divide(2,1);
-  cS->cd(1);
+  TCanvas *Zg = new TCanvas("Zg_"+suff,"Zg_"+suff,800,400);
+  Zg->Divide(2,1);
+  Zg->cd(1);
   TH1F *frcS = DrawFrame(0.,1.,0.,1., "compare 1st splits", "number of entries");
   h1ZgSigCA0->SetTitle("First Splits");
   h1ZgSigCA0->GetYaxis()->SetTitle("number of entries");
@@ -768,14 +939,15 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   h1ZgSigTau0->SetLineStyle(2);
   h1ZgSigTau0->Draw("Esame");
 
-  TLegend *legS = CreateLegend(0.43, 0.78, 0.75, 0.93);
+  TLegend *legS = CreateLegend(0.43, 0.78, 0.2, 0.4);
+  legS->SetTextSize(0.04);
   legS->AddEntry(h1ZgSigTau0,"transition","l");
   legS->AddEntry(h1ZgSigCA0,"hard","l");
   legS->AddEntry(h1ZgSigCA0soft,"soft","l");
   legS->Draw();
   DrawLatex(0.7,0.5, suff, 0.07);
 
-  cS->cd(2);
+  Zg->cd(2);
   TH1F *frcS1 = DrawFrame(0.,1.,0.,1., "compare 2nd splits", "number of entries");
   h1ZgSigCA1->SetTitle("Second Splits");
   h1ZgSigCA1->GetYaxis()->SetTitle("number of entries");
@@ -790,7 +962,7 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   legS->Draw();
   DrawLatex(0.7,0.5, suff, 0.07);
 
-  cS->SaveAs("Zg_1And2ndSplits_"+suff+".png");
+  Zg->SaveAs("Zg_1And2ndSplits_"+suff+".png");
 
   TH1 *h1RgCASig0 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1RgSplit_1"));
   TH1 *h1RgCASig0soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1RgSplit_1"));
@@ -799,9 +971,9 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   TH1 *h1RgCASig1soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1RgSplit_2"));
   TH1 *h1RgTauSig1 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1RgSplit_2"));
   
-  TCanvas *cSR = new TCanvas("cSR_"+suff,"cSR_"+suff,800,400);
-  cSR->Divide(2,1);
-  cSR->cd(1);
+  TCanvas *Rg = new TCanvas("Rg_"+suff,"Rg_"+suff,800,400);
+  Rg->Divide(2,1);
+  Rg->cd(1);
   TH1F *frcSR = DrawFrame(0.,1.,0.,1., "compare 1st splits", "number of entries");
   h1RgCASig0->SetTitle("First Splits");
   h1RgCASig0->GetYaxis()->SetTitle("number of entries");
@@ -814,14 +986,15 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   h1RgTauSig0->SetLineStyle(2);
   h1RgTauSig0->Draw("Esame");
 
-  TLegend *legSR = CreateLegend(0.43, 0.78, 0.7, 0.9);
+  TLegend *legSR = CreateLegend(0.65, 0.92, 0.2, 0.4);
+  legSR->SetTextSize(0.04);
   legSR->AddEntry(h1RgTauSig0,"transition","l");
   legSR->AddEntry(h1RgCASig0,"hard","l");
   legSR->AddEntry(h1RgCASig0soft,"soft","l");
   legSR->Draw();
   DrawLatex(0.7,0.5, suff, 0.07);
 
-  cSR->cd(2);
+  Rg->cd(2);
   TH1F *frcSR1 = DrawFrame(0.,1.,0.,1., "compare 2nd splits", "number of entries");
   h1RgCASig1->SetTitle("Second Splits");
   h1RgCASig1->GetYaxis()->SetTitle("number of entries");
@@ -836,7 +1009,7 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
 
   legSR->Draw();
   DrawLatex(0.7,0.5, suff, 0.07);
-  cSR->SaveAs("Rg_1And2ndSplits_"+suff+".png");
+  Rg->SaveAs("Rg_1And2ndSplits_"+suff+".png");
 
   //energy of sum of the two branches at each node
   TH1 *h1EradSigCA0 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1EradSplit_1"));
@@ -846,9 +1019,9 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   TH1 *h1EradSigCA1soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1EradSplit_2"));
   TH1 *h1EradSigTau1 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1EradSplit_2"));
 
-  TCanvas *cSE = new TCanvas("cSE_"+suff,"cSE_"+suff,800,400);
-  cSE->Divide(2,1);
-  cSE->cd(1);
+  TCanvas *Erad = new TCanvas("Erad_"+suff,"Erad_"+suff,800,400);
+  Erad->Divide(2,1);
+  Erad->cd(1);
   TH1F *frcSE = DrawFrame(0.,1.,0.,1., "compare 1st splits", "number of entries");
   h1EradSigCA0->SetTitle("First Splits");
   h1EradSigCA0->GetYaxis()->SetTitle("number of entries");
@@ -862,13 +1035,14 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   h1EradSigTau0->Draw("Esame");
 
   TLegend *legSE = CreateLegend(0.43, 0.78, 0.7, 0.9);
+  legSE->SetTextSize(0.04);
   legSE->AddEntry(h1EradSigTau0,"transition","l");
   legSE->AddEntry(h1EradSigCA0,"hard","l");
   legSE->AddEntry(h1EradSigCA0soft,"soft","l");
   legSE->Draw();
   DrawLatex(0.7,0.5, suff, 0.07);
 
-  cSE->cd(2);
+  Erad->cd(2);
   TH1F *frcSE1 = DrawFrame(0.,1.,0.,1., "compare 2nd splits", "number of entries");
   h1EradSigCA1->SetTitle("Second Splits");
   h1EradSigCA1->GetYaxis()->SetTitle("number of entries");
@@ -883,7 +1057,7 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
 
   legSE->Draw();
   DrawLatex(0.7,0.5, suff, 0.07);
-  cSE->SaveAs("EnergySum_1And2ndSplits_"+suff+".png");
+  Erad->SaveAs("EnergySum_1And2ndSplits_"+suff+".png");
 
   //Log(1/angle) in the algorithm
   TH1 *h1LogDr12SigCA0 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1LogDr12Split_1"));
@@ -893,9 +1067,9 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   TH1 *h1LogDr12SigCA1soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1LogDr12Split_2"));
   TH1 *h1LogDr12SigTau1 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1LogDr12Split_2"));
 
-  TCanvas *cSL = new TCanvas("cSL_"+suff,"cSL_"+suff,800,400);
-  cSL->Divide(2,1);
-  cSL->cd(1);
+  TCanvas *LogDr = new TCanvas("LogDr_"+suff,"LogDr_"+suff,800,400);
+  LogDr->Divide(2,1);
+  LogDr->cd(1);
   TH1F *frcSEL0 = DrawFrame(0.,1.,0.,1., "compare 1st splits", "number of entries");
   h1LogDr12SigCA0->SetTitle("First Splits");
   h1LogDr12SigCA0->GetYaxis()->SetTitle("number of entries");
@@ -909,14 +1083,14 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   h1LogDr12SigTau0->Draw("Esame");
 
   TLegend *legSL = CreateLegend(0.23, 0.48, 0.2, 0.4);
-  legSL->SetTextSize(0.03);
+  legSL->SetTextSize(0.04);
   legSL->AddEntry(h1LogDr12SigTau0,"transition","l");
   legSL->AddEntry(h1LogDr12SigCA0,"hard","l");
   legSL->AddEntry(h1LogDr12SigCA0soft,"soft","l");
   legSL->Draw();
   DrawLatex(0.7,0.5, suff, 0.07);
 
-  cSL->cd(2);
+  LogDr->cd(2);
   TH1F *frcSE1L = DrawFrame(0.,1.,0.,1., "compare 2nd splits", "number of entries");
   h1LogDr12SigCA1->SetTitle("Second Splits");
   h1LogDr12SigCA1->GetYaxis()->SetTitle("number of entries");
@@ -930,7 +1104,7 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   h1LogDr12SigTau1->Draw("Esame");
   legSL->Draw();
   DrawLatex(0.7,0.5, suff, 0.07);
-  cSL->SaveAs("Log1overAngle_1And2ndSplits_"+suff+".png");
+  LogDr->SaveAs("Log1overAngle_1And2ndSplits_"+suff+".png");
 
   // Log(z*angle) in the algorithm
   TH1 *h1LogZthetaSigCA0 = dynamic_cast<TH1*>(finH->Get("jet-lund-reclustering"+sufH+"/h1LogZthetaSplit_1"));
@@ -940,9 +1114,9 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   TH1 *h1LogZthetaSigCA1soft = dynamic_cast<TH1*>(finS->Get("jet-lund-reclustering"+sufS+"/h1LogZthetaSplit_2"));
   TH1 *h1LogZthetaSigTau1 = dynamic_cast<TH1*>(finT->Get("jet-lund-reclustering"+sufT+"/h1LogZthetaSplit_2"));
 
-  TCanvas *cSEL = new TCanvas("cSEL_"+suff,"cSEL_"+suff,800,400);
-  cSEL->Divide(2,1);
-  cSEL->cd(1);
+  TCanvas *LogZtheta = new TCanvas("LogZtheta_"+suff,"LogZtheta_"+suff,800,400);
+  LogZtheta->Divide(2,1);
+  LogZtheta->cd(1);
   TH1F *frcSEL = DrawFrame(0.,1.,0.,1., "compare 1st splits", "number of entries");
   h1LogZthetaSigCA0->SetTitle("First Splits");
   h1LogZthetaSigCA0->GetYaxis()->SetTitle("number of entries");
@@ -955,14 +1129,15 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
   h1LogZthetaSigTau0->SetLineStyle(2);
   h1LogZthetaSigTau0->Draw("Esame");
 
-  TLegend *legSEL = CreateLegend(0.43, 0.78, 0.7, 0.9);
+  TLegend *legSEL = CreateLegend(0.65, 0.92, 0.2, 0.4);
+  legSEL->SetTextSize(0.04);
   legSEL->AddEntry(h1LogZthetaSigTau0,"transition","l");
   legSEL->AddEntry(h1LogZthetaSigCA0,"hard","l");
   legSEL->AddEntry(h1LogZthetaSigCA0soft,"soft","l");
   legSEL->Draw();
   DrawLatex(0.7,0.5, suff, 0.07);
 
-  cSEL->cd(2);
+  LogZtheta->cd(2);
   TH1F *frcSEL1 = DrawFrame(0.,1.,0.,1., "compare 2nd splits", "number of entries");
   h1LogZthetaSigCA1->SetTitle("Second Splits");
   h1LogZthetaSigCA1->GetYaxis()->SetTitle("number of entries");
@@ -977,7 +1152,7 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
 
   legSEL->Draw();
   DrawLatex(0.7,0.5, suff, 0.07);
-  cSEL->SaveAs("LogTimesZfrac_1And2ndSplits_"+suff+".png");
+  LogZtheta->SaveAs("LogTimesZfrac_1And2ndSplits_"+suff+".png");
   
 }
 
@@ -1056,8 +1231,11 @@ void plotNsubj( TString strIn, TString suff){ // add these sigJetRecurZcut_tau21
   TH1 *projPlot = h2NsubjRatio21XY->ProjectionY();
   c2Nsubj21->cd(6);
   TH1F *frProj = DrawFrame(0., 1.1, 0., 90.,"#tau_{2}/#tau_{1}", "number of entries");
+  gPad->SetLogy();
   projPlot->SetStats(0);
   projPlot->SetTitle(" ");
+  projPlot->GetXaxis()->SetTitle("#tau_{2}/#tau_{1}");
+  projPlot->GetYaxis()->SetTitle("number of entries");
   projPlot->SetLineColor(kRed);
   projPlot->Draw("E");
   projO2->SetLineColor(kBlue);
@@ -1099,8 +1277,8 @@ void plotNsubjInRanges(TString strInPP, TString strInPb, TString strInPPS, TStri
   padTau2->SetLeftMargin(0.18);
 
   int idx = 0;
-  TLegend *leg = CreateLegend(0.52, 0.89, 0.67, 0.92);
-  TLegend *leg2 = CreateLegend(0.52, 0.89, 0.67, 0.92);
+  TLegend *leg = CreateLegend(0.42, 0.89, 0.67, 0.92);
+  TLegend *leg2 = CreateLegend(0.42, 0.89, 0.67, 0.92);
   leg->SetTextSize(0.035);
   leg2->SetTextSize(0.035);
   leg->SetNColumns(2);
@@ -1125,6 +1303,7 @@ void plotNsubjInRanges(TString strInPP, TString strInPb, TString strInPPS, TStri
       tau21->Scale(1./normPP,"width");
       padTau1->Draw();
       padTau1->cd();
+      padTau1->SetLogy();
       tau21->SetStats(0);
       tau21->SetTitle("");
       tau21->SetLineColor(idx+1);
@@ -1141,10 +1320,10 @@ void plotNsubjInRanges(TString strInPP, TString strInPb, TString strInPPS, TStri
       projNsubj->cd(2);
       padTau2->Draw();
       padTau2->cd();
+      padTau2->SetLogy();
       tau21->SetStats(0);
       tau21->SetTitle("");
       tau21->SetLineColor(idx-3);
-      tau21->GetYaxis()->SetTitle("number of entries");
       tau21->GetYaxis()->SetTitleOffset(2.1);
       tau21->GetXaxis()->SetTitle("#tau_{2}/#tau_{1}");
       tau21->GetYaxis()->SetTitle("#frac{1}{N_{jets, incl}} #frac{dN}{d(#tau_{2}/#tau_{1})}");
@@ -1184,8 +1363,8 @@ void plotNsubjInRanges(TString strInPP, TString strInPb, TString strInPPS, TStri
   padTau232->SetLeftMargin(0.18);
 
   int idx32 = 0;
-  TLegend *leg32 = CreateLegend(0.25, 0.5, 0.4, 0.78);
-  TLegend *leg232 = CreateLegend(0.25, 0.5, 0.4, 0.78);
+  TLegend *leg32 = CreateLegend(0.63, 0.93, 0.4, 0.78);
+  TLegend *leg232 = CreateLegend(0.63, 0.93, 0.4, 0.78);
   leg32->SetTextSize(0.035);
   leg232->SetTextSize(0.035);
 
@@ -1277,8 +1456,8 @@ void plotRgZgInRanges(TString strInPP, TString strInPb, TString strInPPS, TStrin
   padTau2->SetLeftMargin(0.18);
 
   int idx = 0;
-  TLegend *leg = CreateLegend(0.52, 0.89, 0.67, 0.92);
-  TLegend *leg2 = CreateLegend(0.52, 0.89, 0.67, 0.92);
+  TLegend *leg = CreateLegend(0.49, 0.89, 0.37, 0.62);
+  TLegend *leg2 = CreateLegend(0.49, 0.89, 0.37, 0.62);
   leg->SetTextSize(0.035);
   leg2->SetTextSize(0.035);
   leg->SetNColumns(2);
@@ -1358,8 +1537,8 @@ void plotRgZgInRanges(TString strInPP, TString strInPb, TString strInPPS, TStrin
   padTau232->SetLeftMargin(0.18);
 
   int idx32 = 0;
-  TLegend *leg32 = CreateLegend(0.25, 0.5, 0.4, 0.78);
-  TLegend *leg232 = CreateLegend(0.25, 0.5, 0.4, 0.78);
+  TLegend *leg32 = CreateLegend(0.25, 0.5, 0.2, 0.58);
+  TLegend *leg232 = CreateLegend(0.25, 0.5, 0.2, 0.58);
   leg32->SetTextSize(0.035);
   leg232->SetTextSize(0.035);
 
@@ -1371,7 +1550,7 @@ void plotRgZgInRanges(TString strInPP, TString strInPb, TString strInPPS, TStrin
     TH2 *h2ZgRg = dynamic_cast<TH2*>(fin->Get("jet-lund-reclustering"+suffix+"/h2ZgRgSplit_0"));//  Z_{g}; R_{g}
     TH2 *h2RgTf = dynamic_cast<TH2*>(fin->Get("jet-lund-reclustering"+suffix+"/h2RgTfSplit_0"));//  R_{g}; #tau_{form}
     
-    TCanvas *corrZgRgTF = new TCanvas("corrZgRgTF_"+i,"corrZgRgTF_"+i,1500,400);
+    TCanvas *corrZgRgTF = new TCanvas("corrZgRgTF_"+suffix,"corrZgRgTF_"+suffix,1500,400);
     corrZgRgTF->Divide(3,1);
     corrZgRgTF->cd(1);
     TH1F *zg = DrawFrame(0.,1.,0.,10.,"z_{g}","#tau_{form}");
@@ -1385,7 +1564,7 @@ void plotRgZgInRanges(TString strInPP, TString strInPb, TString strInPPS, TStrin
     TH1F *rg = DrawFrame(0.,1.,0.,10.,"R_{g}","#tau_{form}");
     gPad->SetLogz();
     h2RgTf->Draw("colz same");
-    DrawLatex(0.55, 0.55, i+"  "+dy, 0.06);
+    DrawLatex(0.55, 0.55, suffix, 0.06);
     corrZgRgTF->SaveAs("corrZgRgTF_"+suffix+"_"+dy+".png");
 
     TH1 *tau21 = h2ZgTf->ProjectionX();
@@ -1400,7 +1579,7 @@ void plotRgZgInRanges(TString strInPP, TString strInPb, TString strInPPS, TStrin
       tau21->SetLineColor(idx32+1);
       tau21->GetYaxis()->SetTitle("#frac{1}{N_{jets, incl}} #frac{dN}{dz_{g}}");
       tau21->GetYaxis()->SetTitleOffset(2.1);
-      tau21->GetXaxis()->SetTitle("R_{g}");
+      tau21->GetXaxis()->SetTitle("z_{g}");
       tau21->GetXaxis()->SetRangeUser(0, 0.6);
       tau21->DrawCopy("h");
       DrawLatex(0.6,0.95, "pp "+dy, 0.06);
@@ -1418,7 +1597,7 @@ void plotRgZgInRanges(TString strInPP, TString strInPb, TString strInPPS, TStrin
       tau21->GetYaxis()->SetTitle("#frac{1}{N_{jets, incl}} #frac{dN}{dz_{g}}");
       tau21->GetYaxis()->SetTitleOffset(2.1);
       tau21->GetXaxis()->SetRangeUser(0, 0.6);
-      tau21->GetXaxis()->SetTitle("R_{g}");
+      tau21->GetXaxis()->SetTitle("z_{g}");
       tau21->DrawCopy("h");
       DrawLatex(0.6,0.95, "PbPb "+dy, 0.06);
       leg232->AddEntry(tau21, ilegend[idx32],"lp");
@@ -1444,7 +1623,7 @@ void plotRgZgInRanges(TString strInPP, TString strInPb, TString strInPPS, TStrin
   leg32->Draw();
   padTau232->cd();
   leg232->Draw();
-  projZg->SaveAs("projFullZg"+dy+".png");
+  projZg->SaveAs("projFullZg_"+dy+".png");
 
 }
 
@@ -1481,21 +1660,39 @@ void o2plots() {
   */
 
 
-  compareSplits( "AnalysisResults_Pb_trans.root",  "AnalysisResults_Pb_1hard.root",  "AnalysisResults_Pb_2soft.root", "Pb");
-  compareSplits( "AnalysisResults_PP_trans.root",  "AnalysisResults_PP_1hard.root",  "AnalysisResults_PP_2soft.root", "PP");
+  //compareSplits( "Pb/AnalysisResults_Pb_trans.root",  "Pb/AnalysisResults_Pb_1hard.root",  "Pb/AnalysisResults_Pb_2soft.root", "Pb");
+  //compareSplits( "PP/AnalysisResults_PP_trans.root",  "PP/AnalysisResults_PP_1hard.root",  "PP/AnalysisResults_PP_2soft.root", "PP");
+  //plotRgZgInRanges("PP/AnalysisResults_PP_1hard.root", "Pb/AnalysisResults_Pb_1hard.root", "PP/AnalysisResults_PP_1hard_short.root", "Pb/AnalysisResults_Pb_1hard_short.root", "PP/AnalysisResults_PP_1hard_intermed.root", "Pb/AnalysisResults_Pb_1hard_intermed.root", "PP/AnalysisResults_PP_1hard_large.root", "Pb/AnalysisResults_Pb_1hard_large.root", "1hard");
+  //plotRgZgInRanges("PP/AnalysisResults_PP_2soft.root", "Pb/AnalysisResults_Pb_2soft.root", "PP/AnalysisResults_PP_2soft_short.root", "Pb/AnalysisResults_Pb_2soft_short.root", "PP/AnalysisResults_PP_2soft_intermed.root", "Pb/AnalysisResults_Pb_2soft_intermed.root", "PP/AnalysisResults_PP_2soft_large.root", "Pb/AnalysisResults_Pb_2soft_large.root", "1hard");
+  //plotRgZgInRanges("PP/AnalysisResults_PP_trans.root", "Pb/AnalysisResults_Pb_trans.root", "PP/AnalysisResults_PP_trans_short.root", "Pb/AnalysisResults_Pb_trans_short.root", "PP/AnalysisResults_PP_trans_intermed.root", "Pb/AnalysisResults_Pb_trans_intermed.root", "PP/AnalysisResults_PP_trans_large.root", "Pb/AnalysisResults_Pb_trans_large.root", "1hard");
+  
+  //plotTiming("PP/AnalysisResults_PP_1hard.root", "PP/AnalysisResults_PP_2soft.root", "PP/AnalysisResults_PP_trans.root", "pp");
+  //plotTiming("Pb/AnalysisResults_Pb_1hard.root", "Pb/AnalysisResults_Pb_2soft.root", "Pb/AnalysisResults_Pb_trans.root", "Pb");
+
+  //plotPtEtaPhi("PP/AnalysisResults_PP_1hard.root");
+  //plotPtEtaPhi("PP/AnalysisResults_PP_2soft.root");
+  //plotPtEtaPhi("PP/AnalysisResults_PP_trans.root");
+  //plotPtEtaPhi("Pb/AnalysisResults_Pb_1hard.root");
+  //plotPtEtaPhi("Pb/AnalysisResults_Pb_2soft.root");
+  //plotPtEtaPhi("Pb/AnalysisResults_Pb_trans.root");
+  //plotRgs("PP/AnalysisResults_PP_trans.root", "Pb/AnalysisResults_Pb_trans.root","PP/AnalysisResults_PP_1hard.root", "Pb/AnalysisResults_Pb_1hard.root", "PP/AnalysisResults_PP_2soft.root", "Pb/AnalysisResults_Pb_2soft.root");
+
+  plotNsubjInRanges("PP/AnalysisResults_PP_trans.root", "Pb/AnalysisResults_Pb_trans.root", "PP/AnalysisResults_PP_trans_short.root", "Pb/AnalysisResults_Pb_trans_short.root", "PP/AnalysisResults_PP_trans_intermed.root", "Pb/AnalysisResults_Pb_trans_intermed.root", "PP/AnalysisResults_PP_trans_large.root", "Pb/AnalysisResults_Pb_trans_large.root", "trans"); //cross check nsub above for underflow problem !
+  //plotNsubjInRanges("PP/AnalysisResults_PP_2soft.root", "Pb/AnalysisResults_Pb_2soft.root", "PP/AnalysisResults_PP_2soft_short.root", "Pb/AnalysisResults_Pb_2soft_short.root", "PP/AnalysisResults_PP_2soft_intermed.root", "Pb/AnalysisResults_Pb_2soft_intermed.root", "PP/AnalysisResults_PP_2soft_large.root", "Pb/AnalysisResults_Pb_2soft_large.root", "2soft"); //cross check nsub above for underflow problem !
+  //plotNsubjInRanges("PP/AnalysisResults_PP_1hard.root", "Pb/AnalysisResults_Pb_1hard.root", "PP/AnalysisResults_PP_1hard_short.root", "Pb/AnalysisResults_Pb_1hard_short.root", "PP/AnalysisResults_PP_1hard_intermed.root", "Pb/AnalysisResults_Pb_1hard_intermed.root", "PP/AnalysisResults_PP_1hard_large.root", "Pb/AnalysisResults_Pb_1hard_large.root", "1hard"); //cross check nsub above for underflow problem !
+
+  //plotNsubj("PP/AnalysisResults_PP_1hard.root", "hard");// not optimal, but for sure an underflow above issue ! - add statement to o2 physics code !
+  //plotNsubj("Pb/AnalysisResults_Pb_trans.root", "transition");
+  //plotNsubj("PP/AnalysisResults_PP_trans.root", "transition");
+
+  // Needs weighted pt for CR
+  //doRaaRanges("PP/AnalysisResults_PP_trans.root", "Pb/AnalysisResults_Pb_trans.root", "PP/AnalysisResults_PP_trans_short.root", "Pb/AnalysisResults_Pb_trans_short.root", "PP/AnalysisResults_PP_trans_large.root", "Pb/AnalysisResults_Pb_trans_large.root", "PP/AnalysisResults_PP_trans_intermed.root", "Pb/AnalysisResults_Pb_trans_intermed.root", "trans"); //cross check nsub above for underflow problem !
+  //doRaaRanges("PP/AnalysisResults_PP_1hard.root", "Pb/AnalysisResults_Pb_1hard.root", "PP/AnalysisResults_PP_1hard_short.root", "Pb/AnalysisResults_Pb_1hard_short.root", "PP/AnalysisResults_PP_1hard_large.root", "Pb/AnalysisResults_Pb_1hard_large.root", "PP/AnalysisResults_PP_1hard_intermed.root", "Pb/AnalysisResults_Pb_1hard_intermed.root", "hard"); //cross check nsub above for underflow problem !
+  //doRaaRanges("PP/AnalysisResults_PP_2soft.root", "Pb/AnalysisResults_Pb_2soft.root", "PP/AnalysisResults_PP_2soft_short.root", "Pb/AnalysisResults_Pb_2soft_short.root", "PP/AnalysisResults_PP_2soft_large.root", "Pb/AnalysisResults_Pb_2soft_large.root", "PP/AnalysisResults_PP_2soft_intermed.root", "Pb/AnalysisResults_Pb_2soft_intermed.root", "soft"); //cross check nsub above for underflow problem !
+
+
   
   return;
-// adjust code to respect the additional suffix AnalysisResults_Pb_1hard_large.root jet-lund-reclusterigPb_1hard_large
-
-  //doRaaRanges(strInPP, strInPb, strInPPS, strInPbS, strInPPL, strInPbL, strInPPI, strInPbI, "transition");// norm and event weight !!! looks bad for now
-  //plotNsubjInRanges(strInPP, strInPb, strInPPS, strInPbS, strInPPI, strInPbI, strInPPL, strInPbL, "trans"); //cross check nsub above for underflow problem !
-  //plotNsubj(strInPb, "PbPb_transition");// not optima, but for sure an underflow issue ! - add statement to o2 physics code !
-  // These are "okey"
-  //plotRgZgInRanges(strInPP, strInPb, strInPPS, strInPbS, strInPPI, strInPbI, strInPPL, strInPbL, "trans");
-  //plotPtEtaPhi(strInPP, "pp transition");
-  //plotTiming("PP/AnalysisResults_PP_1hard.root", "PP/AnalysisResults_PP_2soft.root", "PP/AnalysisResults_PP_trans.root", "pp");
-  //plotRgs("PP/AnalysisResults_PP_trans.root", "PbPb/AnalysisResults_Pb_trans.root", "transition");
-  
   
 
 }

@@ -84,7 +84,7 @@ void plotRgs(TString strInPPT, TString strInPbT, TString strInPPH, TString strIn
   TH1 *h1PgSigCloneS2 = dynamic_cast<TH1*>(h1RgSigPbS->Clone("h1RgCASigCloneS2"));
 
   // Canvas for LP
-  TCanvas *cRg = new TCanvas("cRgRatio","cRgRatio",600,500);
+  TCanvas *cRg = new TCanvas("cRgRatio","cRgRatio",900,400);
   TPad *pad1 = new TPad("pad1", "pad1", 0.05, 0.3, 0.35, 1);
   //pad1->SetBottomMargin(0);
   pad1->Draw();
@@ -314,7 +314,7 @@ void plotPtEtaPhi(TString strIn){
   h1ReclSubPhi->SetLineColor(kBlack);
   h1ReclSubPhi->Draw("Esame");
   legPt->Draw();
-  cEta->SaveAs("QA_Jet_Phi_"+suffix+".png");
+  cPhi->SaveAs("QA_Jet_Phi_"+suffix+".png");
 
 }
 
@@ -359,11 +359,11 @@ void plotTiming(TString strInH, TString strInS, TString strInT, TString suff){
   h1LogTfSigH->SetLineColor(kBlue);
   h1LogTfSigH->GetYaxis()->SetTitle("number of entries");
   h1LogTfSigH->GetXaxis()->SetTitle("(1st) split log(#tau_{form})");
-  h1LogTfSigH->Draw("E");
+  //h1LogTfSigH->Draw("E");
   h1LogTfSigS->SetLineColor(kMagenta);
-  h1LogTfSigS->Draw("Esame");
+  //h1LogTfSigS->Draw("Esame");
   h1LogTfSigT->SetLineColor(kBlack);
-  h1LogTfSigT->Draw("Esame");
+  h1LogTfSigT->Draw("E");
   logTf->cd(2);
   TH1F *fr32 = DrawFrame(-10.,10.,-10.,10.,"(2nd) split log(#tau_{form})","number of entries");
   gPad->SetLogy();
@@ -392,9 +392,9 @@ void plotTiming(TString strInH, TString strInS, TString strInT, TString suff){
   h1LogTfSigT0->Draw("Esame");
 
   TLegend *leg1 = CreateLegend(0.67, 0.85, 0.78, 0.92);
-  leg1->AddEntry(h1LogTfSigH,"hard","l");
-  leg1->AddEntry(h1LogTfSigS,"soft","l");
-  leg1->AddEntry(h1LogTfSigT,"transition","l");
+  leg1->AddEntry(h1LogTfSigH,sufH,"l");
+  leg1->AddEntry(h1LogTfSigS,sufS,"l");
+  leg1->AddEntry(h1LogTfSigT,sufT,"l");
   leg1->Draw();
 
   DrawLatex(0.3, 0.8, suff, 0.06);
@@ -415,11 +415,11 @@ void plotTiming(TString strInH, TString strInS, TString strInT, TString suff){
   h1TfSigH->SetLineColor(kBlue);
   h1TfSigH->GetYaxis()->SetTitle("number of entries");
   h1TfSigH->GetXaxis()->SetTitle("(1st) split #tau_{form}");
-  h1TfSigH->Draw("E");
+  //h1TfSigH->Draw("E");
   h1TfSigS->SetLineColor(kMagenta);
-  h1TfSigS->Draw("Esame");
+  //h1TfSigS->Draw("Esame");
   h1TfSigT->SetLineColor(kBlack);
-  h1TfSigT->Draw("Esame");
+  h1TfSigT->Draw("E");
   tf->cd(2);
   TH1F *frtf2 = DrawFrame(-10.,10.,-10.,10.,"(2nd) split #tau_{form})","number of entries");
   gPad->SetLogy();
@@ -448,9 +448,9 @@ void plotTiming(TString strInH, TString strInS, TString strInT, TString suff){
   h1TfSigT0->Draw("Esame");
 
   TLegend *leg2tf = CreateLegend(0.67, 0.85, 0.78, 0.92);
-  leg2tf->AddEntry(h1TfSigH,"hard","l");
-  leg2tf->AddEntry(h1TfSigS,"soft","l");
-  leg2tf->AddEntry(h1TfSigT,"transition","l");
+  leg2tf->AddEntry(h1TfSigH,sufH,"l");
+  leg2tf->AddEntry(h1TfSigS,sufS,"l");
+  leg2tf->AddEntry(h1TfSigT,sufT,"l");
   leg2tf->Draw();
 
   DrawLatex(0.3, 0.8, suff, 0.06);
@@ -892,9 +892,9 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
 
   TLegend *legtf = CreateLegend(0.43, 0.78, 0.7, 0.9);
   legtf->SetTextSize(0.04);
-  legtf->AddEntry(h1TfSigTau0,"transition","l");
-  legtf->AddEntry(h1TfSigTauSoft0,"hard","l");
-  legtf->AddEntry(h1TfSigCA0,"soft","l");
+  legtf->AddEntry(h1TfSigTau0,sufT,"l");
+  legtf->AddEntry(h1TfSigTauSoft0,sufH,"l");
+  legtf->AddEntry(h1TfSigCA0,sufTS,"l");
   legtf->Draw();
   DrawLatex(0.7,0.5, suff, 0.07);
 
@@ -941,9 +941,9 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
 
   TLegend *legS = CreateLegend(0.43, 0.78, 0.2, 0.4);
   legS->SetTextSize(0.04);
-  legS->AddEntry(h1ZgSigTau0,"transition","l");
-  legS->AddEntry(h1ZgSigCA0,"hard","l");
-  legS->AddEntry(h1ZgSigCA0soft,"soft","l");
+  legS->AddEntry(h1ZgSigTau0,sufT,"l");
+  legS->AddEntry(h1ZgSigCA0,sufH,"l");
+  legS->AddEntry(h1ZgSigCA0soft,sufS,"l");
   legS->Draw();
   DrawLatex(0.7,0.5, suff, 0.07);
 
@@ -988,9 +988,9 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
 
   TLegend *legSR = CreateLegend(0.65, 0.92, 0.2, 0.4);
   legSR->SetTextSize(0.04);
-  legSR->AddEntry(h1RgTauSig0,"transition","l");
-  legSR->AddEntry(h1RgCASig0,"hard","l");
-  legSR->AddEntry(h1RgCASig0soft,"soft","l");
+  legSR->AddEntry(h1RgTauSig0,sufT,"l");
+  legSR->AddEntry(h1RgCASig0,sufH,"l");
+  legSR->AddEntry(h1RgCASig0soft, sufS,"l");
   legSR->Draw();
   DrawLatex(0.7,0.5, suff, 0.07);
 
@@ -1036,9 +1036,9 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
 
   TLegend *legSE = CreateLegend(0.43, 0.78, 0.7, 0.9);
   legSE->SetTextSize(0.04);
-  legSE->AddEntry(h1EradSigTau0,"transition","l");
-  legSE->AddEntry(h1EradSigCA0,"hard","l");
-  legSE->AddEntry(h1EradSigCA0soft,"soft","l");
+  legSE->AddEntry(h1EradSigTau0,sufT,"l");
+  legSE->AddEntry(h1EradSigCA0,sufH,"l");
+  legSE->AddEntry(h1EradSigCA0soft,sufS,"l");
   legSE->Draw();
   DrawLatex(0.7,0.5, suff, 0.07);
 
@@ -1084,9 +1084,9 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
 
   TLegend *legSL = CreateLegend(0.23, 0.48, 0.2, 0.4);
   legSL->SetTextSize(0.04);
-  legSL->AddEntry(h1LogDr12SigTau0,"transition","l");
-  legSL->AddEntry(h1LogDr12SigCA0,"hard","l");
-  legSL->AddEntry(h1LogDr12SigCA0soft,"soft","l");
+  legSL->AddEntry(h1LogDr12SigTau0,sufT,"l");
+  legSL->AddEntry(h1LogDr12SigCA0,sufH,"l");
+  legSL->AddEntry(h1LogDr12SigCA0soft,sufS,"l");
   legSL->Draw();
   DrawLatex(0.7,0.5, suff, 0.07);
 
@@ -1131,9 +1131,9 @@ void compareSplits(TString strInPT, TString strInPH, TString strInPS, TString su
 
   TLegend *legSEL = CreateLegend(0.65, 0.92, 0.2, 0.4);
   legSEL->SetTextSize(0.04);
-  legSEL->AddEntry(h1LogZthetaSigTau0,"transition","l");
-  legSEL->AddEntry(h1LogZthetaSigCA0,"hard","l");
-  legSEL->AddEntry(h1LogZthetaSigCA0soft,"soft","l");
+  legSEL->AddEntry(h1LogZthetaSigTau0,sufT,"l");
+  legSEL->AddEntry(h1LogZthetaSigCA0,sufH,"l");
+  legSEL->AddEntry(h1LogZthetaSigCA0soft,sufS,"l");
   legSEL->Draw();
   DrawLatex(0.7,0.5, suff, 0.07);
 
@@ -1265,7 +1265,15 @@ void plotNsubjInRanges(TString strInPP, TString strInPb, TString strInPPS, TStri
   std::array<double, 2> PtNorm = getNorm(h1SigPtVac, h1SigPtMed);
   double normPP = PtNorm[0];
   double normPb = PtNorm[1];
+  
+  TH3 *h3NsubjRatio = dynamic_cast<TH3*>(finPPP->Get("jet-lund-reclustering"+suffPP+"/h3Nsubj2Ratio"));// x =  #tau{2}/#tau_{1}; y = p_{T,jet} [GeV/#it{c}]; z = #Delta R
+  //h3NsubjRatio->Draw("colz");
+  TH2 *h2NsubjRatio21XY = h3NsubjRatio->Project3DProfile("xz");
+  //TH1F *frXY2 = DrawFrame(0.,1.,0.,1.,"#Delta R","(o2Ratio) #tau_{2}/#tau_{1}");
+  //gPad->SetLogz();
+  h2NsubjRatio21XY->Draw("colz");
 
+  //return;
   list<TString>  ifiles{strInPP, strInPPS, strInPPI, strInPPL, strInPb, strInPbS, strInPbI, strInPbL};  
   TString ilegend[8] = {"vac. incl.", "vac. #tau < 1", "vac. 1 < #tau < 3", "vac. #tau > 3", "med. incl.", "med. #tau < 1", "med. 1 < #tau < 3", "med. #tau > 3"};  
   
@@ -1277,12 +1285,12 @@ void plotNsubjInRanges(TString strInPP, TString strInPb, TString strInPPS, TStri
   padTau2->SetLeftMargin(0.18);
 
   int idx = 0;
-  TLegend *leg = CreateLegend(0.42, 0.89, 0.67, 0.92);
-  TLegend *leg2 = CreateLegend(0.42, 0.89, 0.67, 0.92);
+  TLegend *leg = CreateLegend(0.63, 0.93, 0.4, 0.78);
+  TLegend *leg2 = CreateLegend(0.63, 0.93, 0.4, 0.78);
   leg->SetTextSize(0.035);
   leg2->SetTextSize(0.035);
-  leg->SetNColumns(2);
-  leg2->SetNColumns(2);
+  //leg->SetNColumns(2);
+  //leg2->SetNColumns(2);
 
 /*
     // Jet substructure - nSub0 = deltaR
@@ -1296,14 +1304,16 @@ void plotNsubjInRanges(TString strInPP, TString strInPb, TString strInPPS, TStri
     TFile *fin = new TFile(i.Data());
     TString suffix = createSuffix(i);
     TH3 *h2Nsubj21 = dynamic_cast<TH3*>(fin->Get("jet-lund-reclustering"+suffix+"/h3Nsubj2Ratio"));// x =  #tau{2}/#tau_{1}; y = p_{T,jet} [GeV/#it{c}]; z = #Delta R
-    TH1 *tau21 = h2Nsubj21->Project3D("x");
+    TH2 *proftau21 = h2Nsubj21->Project3DProfile("xz");
+    //proftau21->Draw("colz");
+    TH1 *tau21 = proftau21->ProjectionY();
     tau21->SetLineWidth(2);
     projNsubj->cd(1);
     if (idx < 1){
       tau21->Scale(1./normPP,"width");
       padTau1->Draw();
       padTau1->cd();
-      padTau1->SetLogy();
+      //padTau1->SetLogy();
       tau21->SetStats(0);
       tau21->SetTitle("");
       tau21->SetLineColor(idx+1);
@@ -1320,7 +1330,7 @@ void plotNsubjInRanges(TString strInPP, TString strInPb, TString strInPPS, TStri
       projNsubj->cd(2);
       padTau2->Draw();
       padTau2->cd();
-      padTau2->SetLogy();
+      //padTau2->SetLogy();
       tau21->SetStats(0);
       tau21->SetTitle("");
       tau21->SetLineColor(idx-3);
@@ -1372,7 +1382,9 @@ void plotNsubjInRanges(TString strInPP, TString strInPb, TString strInPPS, TStri
     TFile *fin = new TFile(i.Data());
     TString suffix = createSuffix(i);
     TH3 *h2Nsubj21 = dynamic_cast<TH3*>(fin->Get("jet-lund-reclustering"+suffix+"/h3Nsubj2Ratio"));// x =  #tau{2}/#tau_{1}; y = p_{T,jet} [GeV/#it{c}]; z = #Delta R
-    TH1 *tau21 = h2Nsubj21->Project3D("z");
+    //TH1 *tau21 = h2Nsubj21->Project3D("z");
+    TH2 *proftau21 = h2Nsubj21->Project3DProfile("xz");
+    TH1 *tau21 = proftau21->ProjectionX();
     tau21->SetLineWidth(2);
     projDeltaR->cd(1);
     if (idx32 < 1){
@@ -1639,26 +1651,6 @@ void o2plots() {
   TString strInPPS = "PP/AnalysisResults_PP_trans_short.root";
   TString strInPPI = "PP/AnalysisResults_PP_trans_intermed.root";
   TString strInPPL = "PP/AnalysisResults_PP_trans_large.root";
-  /*
-  TString strInPb = "PbPb/AnalysisResults_Pb_1hard.root";
-  TString strInPbS = "PbPb/AnalysisResults_Pb_1hard_short.root";
-  TString strInPbI = "PbPb/AnalysisResults_Pb_1hard_intermed.root";
-  TString strInPbL = "PbPb/AnalysisResults_Pb_1hard_large.root";
-  TString strInPP = "PP/AnalysisResults_PP_1hard.root";
-  TString strInPPS = "PP/AnalysisResults_PP_1hard_short.root";
-  TString strInPPI = "PP/AnalysisResults_PP_1hard_intermed.root";
-  TString strInPPL = "PP/AnalysisResults_PP_1hard_large.root";
-  
-  TString strInPb = "PbPb/AnalysisResults_Pb_2soft.root";
-  TString strInPbS = "PbPb/AnalysisResults_Pb_2soft_short.root";
-  TString strInPbI = "PbPb/AnalysisResults_Pb_2soft_intermed.root";
-  TString strInPbL = "PbPb/AnalysisResults_Pb_2soft_large.root";
-  TString strInPP = "PP/AnalysisResults_PP_2soft.root";
-  TString strInPPS = "PP/AnalysisResults_PP_2soft_short.root";
-  TString strInPPI = "PP/AnalysisResults_PP_2soft_intermed.root";
-  TString strInPPL = "PP/AnalysisResults_PP_2soft_large.root";
-  */
-
 
   //compareSplits( "Pb/AnalysisResults_Pb_trans.root",  "Pb/AnalysisResults_Pb_1hard.root",  "Pb/AnalysisResults_Pb_2soft.root", "Pb");
   //compareSplits( "PP/AnalysisResults_PP_trans.root",  "PP/AnalysisResults_PP_1hard.root",  "PP/AnalysisResults_PP_2soft.root", "PP");
@@ -1666,8 +1658,8 @@ void o2plots() {
   //plotRgZgInRanges("PP/AnalysisResults_PP_2soft.root", "Pb/AnalysisResults_Pb_2soft.root", "PP/AnalysisResults_PP_2soft_short.root", "Pb/AnalysisResults_Pb_2soft_short.root", "PP/AnalysisResults_PP_2soft_intermed.root", "Pb/AnalysisResults_Pb_2soft_intermed.root", "PP/AnalysisResults_PP_2soft_large.root", "Pb/AnalysisResults_Pb_2soft_large.root", "1hard");
   //plotRgZgInRanges("PP/AnalysisResults_PP_trans.root", "Pb/AnalysisResults_Pb_trans.root", "PP/AnalysisResults_PP_trans_short.root", "Pb/AnalysisResults_Pb_trans_short.root", "PP/AnalysisResults_PP_trans_intermed.root", "Pb/AnalysisResults_Pb_trans_intermed.root", "PP/AnalysisResults_PP_trans_large.root", "Pb/AnalysisResults_Pb_trans_large.root", "1hard");
   
-  //plotTiming("PP/AnalysisResults_PP_1hard.root", "PP/AnalysisResults_PP_2soft.root", "PP/AnalysisResults_PP_trans.root", "pp");
-  //plotTiming("Pb/AnalysisResults_Pb_1hard.root", "Pb/AnalysisResults_Pb_2soft.root", "Pb/AnalysisResults_Pb_trans.root", "Pb");
+  //plotTiming("PP/AnalysisResults_PP_1hard.root", "PP/AnalysisResults_PP_2soft.root", "PP/AnalysisResults_PP_3single.root", "pp");
+  plotTiming("Pb/AnalysisResults_Pb_1hard.root", "Pb/AnalysisResults_Pb_2soft.root", "Pb/AnalysisResults_Pb_3single.root", "Pb");
 
   //plotPtEtaPhi("PP/AnalysisResults_PP_1hard.root");
   //plotPtEtaPhi("PP/AnalysisResults_PP_2soft.root");
@@ -1677,22 +1669,18 @@ void o2plots() {
   //plotPtEtaPhi("Pb/AnalysisResults_Pb_trans.root");
   //plotRgs("PP/AnalysisResults_PP_trans.root", "Pb/AnalysisResults_Pb_trans.root","PP/AnalysisResults_PP_1hard.root", "Pb/AnalysisResults_Pb_1hard.root", "PP/AnalysisResults_PP_2soft.root", "Pb/AnalysisResults_Pb_2soft.root");
 
-  plotNsubjInRanges("PP/AnalysisResults_PP_trans.root", "Pb/AnalysisResults_Pb_trans.root", "PP/AnalysisResults_PP_trans_short.root", "Pb/AnalysisResults_Pb_trans_short.root", "PP/AnalysisResults_PP_trans_intermed.root", "Pb/AnalysisResults_Pb_trans_intermed.root", "PP/AnalysisResults_PP_trans_large.root", "Pb/AnalysisResults_Pb_trans_large.root", "trans"); //cross check nsub above for underflow problem !
+  // do direct projection and remove first bin to see if it is the same as the profile->projection !
+  //plotNsubjInRanges("PP/AnalysisResults_PP_trans.root", "Pb/AnalysisResults_Pb_trans.root", "PP/AnalysisResults_PP_trans_short.root", "Pb/AnalysisResults_Pb_trans_short.root", "PP/AnalysisResults_PP_trans_intermed.root", "Pb/AnalysisResults_Pb_trans_intermed.root", "PP/AnalysisResults_PP_trans_large.root", "Pb/AnalysisResults_Pb_trans_large.root", "trans"); //cross check nsub above for underflow problem !
   //plotNsubjInRanges("PP/AnalysisResults_PP_2soft.root", "Pb/AnalysisResults_Pb_2soft.root", "PP/AnalysisResults_PP_2soft_short.root", "Pb/AnalysisResults_Pb_2soft_short.root", "PP/AnalysisResults_PP_2soft_intermed.root", "Pb/AnalysisResults_Pb_2soft_intermed.root", "PP/AnalysisResults_PP_2soft_large.root", "Pb/AnalysisResults_Pb_2soft_large.root", "2soft"); //cross check nsub above for underflow problem !
   //plotNsubjInRanges("PP/AnalysisResults_PP_1hard.root", "Pb/AnalysisResults_Pb_1hard.root", "PP/AnalysisResults_PP_1hard_short.root", "Pb/AnalysisResults_Pb_1hard_short.root", "PP/AnalysisResults_PP_1hard_intermed.root", "Pb/AnalysisResults_Pb_1hard_intermed.root", "PP/AnalysisResults_PP_1hard_large.root", "Pb/AnalysisResults_Pb_1hard_large.root", "1hard"); //cross check nsub above for underflow problem !
 
-  //plotNsubj("PP/AnalysisResults_PP_1hard.root", "hard");// not optimal, but for sure an underflow above issue ! - add statement to o2 physics code !
+  //plotNsubj("PP/AnalysisResults_PP_1hard.root", "hard");// not optimal, but for sure an underflow issue for the function above - solved by profiling and then projecting !
   //plotNsubj("Pb/AnalysisResults_Pb_trans.root", "transition");
   //plotNsubj("PP/AnalysisResults_PP_trans.root", "transition");
 
   // Needs weighted pt for CR
   //doRaaRanges("PP/AnalysisResults_PP_trans.root", "Pb/AnalysisResults_Pb_trans.root", "PP/AnalysisResults_PP_trans_short.root", "Pb/AnalysisResults_Pb_trans_short.root", "PP/AnalysisResults_PP_trans_large.root", "Pb/AnalysisResults_Pb_trans_large.root", "PP/AnalysisResults_PP_trans_intermed.root", "Pb/AnalysisResults_Pb_trans_intermed.root", "trans"); //cross check nsub above for underflow problem !
   //doRaaRanges("PP/AnalysisResults_PP_1hard.root", "Pb/AnalysisResults_Pb_1hard.root", "PP/AnalysisResults_PP_1hard_short.root", "Pb/AnalysisResults_Pb_1hard_short.root", "PP/AnalysisResults_PP_1hard_large.root", "Pb/AnalysisResults_Pb_1hard_large.root", "PP/AnalysisResults_PP_1hard_intermed.root", "Pb/AnalysisResults_Pb_1hard_intermed.root", "hard"); //cross check nsub above for underflow problem !
-  //doRaaRanges("PP/AnalysisResults_PP_2soft.root", "Pb/AnalysisResults_Pb_2soft.root", "PP/AnalysisResults_PP_2soft_short.root", "Pb/AnalysisResults_Pb_2soft_short.root", "PP/AnalysisResults_PP_2soft_large.root", "Pb/AnalysisResults_Pb_2soft_large.root", "PP/AnalysisResults_PP_2soft_intermed.root", "Pb/AnalysisResults_Pb_2soft_intermed.root", "soft"); //cross check nsub above for underflow problem !
-
-
-  
+  //doRaaRanges("PP/AnalysisResults_PP_2soft.root", "Pb/AnalysisResults_Pb_2soft.root", "PP/AnalysisResults_PP_2soft_short.root", "Pb/AnalysisResults_Pb_2soft_short.root", "PP/AnalysisResults_PP_2soft_large.root", "Pb/AnalysisResults_Pb_2soft_large.root", "PP/AnalysisResults_PP_2soft_intermed.root", "Pb/AnalysisResults_Pb_2soft_intermed.root", "soft"); //cross check nsub above for underflow problem ! 
   return;
-  
-
 }

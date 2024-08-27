@@ -742,20 +742,21 @@ generate_standard_config() {
                 "0.3"
             ]
         },
-        "jetPtMin": "5",
-        "jetPtMax": "200",
+        "jetPtMin": "50",
+        "jetPtMax": "250",
         "jetEWSPtMin": "0",
         "jetEWSPtMax": "1000",
         "jetEtaMin": "-0.5",
         "jetEtaMax": "0.5",
-        "jetAlgorithm": "2",
+        "jetAlgorithm": "3",
         "jetRecombScheme": "0",
         "jetGhostArea": "0.00499999989",
         "ghostRepeat": "1",
         "DoTriggering": "false",
         "jetAreaFractionMin": "-99",
-        "jetPtBinWidth": "1",
+        "jetPtBinWidth": "5",
         "fillTHnSparse": "true",
+        "jetExtraParam": "-1",
         "processChargedJets": "true",
         "processChargedEvtWiseSubJets": "false",
         "processNeutralJets": "false",
@@ -773,13 +774,13 @@ generate_standard_config() {
         "Tfcut_max": "20",
         "Rgcut_trans": "0.10000000000000001",
         "Tf_limit": "0",
-        "jetPtMin": "5",
+        "jetPtMin": "50",
         "jetR": "0.300000012",
         "jet_min_eta": "-0.5",
         "jet_max_eta": "0.5",
         "genKTp": "0.5",
         "vertexZCut": "10",
-        "Nsplits": "3",
+        "Nsplits": "4",
         "pt-binning": {
             "values": [
                 "0",
@@ -895,9 +896,9 @@ generate_standard_config() {
         },
         "erad-binning": {
             "values": [
-                "100",
+                "500",
                 "0",
-                "200"
+                "250"
             ]
         },
         "lnDeltaRBinning-binning": {
@@ -979,6 +980,22 @@ append_config_for_cut() {
     elif [[ $cutName = *'2soft'* ]]; then
         echo 'soft limit'
         tf_limit="2"
+        if [[ $cutName = *'large'* ]]; then
+            echo 'large time'
+            tfcut_max="20"
+            tfcut_min="3"
+        elif [[ $cutName = *'intermed'* ]]; then
+            echo 'intermedite time'
+            tfcut_max="3"
+            tfcut_min="1"
+        elif [[ $cutName = *'short'* ]]; then
+            echo 'short time'
+            tfcut_max="1"
+            tfcut_min="0"
+        fi
+    elif [[ $cutName = *'3single'* ]]; then
+        echo 'new single splitting limit'
+        tf_limit="3"
         if [[ $cutName = *'large'* ]]; then
             echo 'large time'
             tfcut_max="20"

@@ -65,6 +65,7 @@ struct JetLundReclustering {
   std::vector<fastjet::PseudoJet> jetConstituents;
   std::vector<fastjet::PseudoJet> jetReclustered;
   std::vector<float> nSub;
+  std::vector<float> tfJet;
   JetFinder jetReclusterer;
 
   Configurable<std::string> eventSelections{"eventSelections", "sel8", "choose event selection"};
@@ -112,15 +113,14 @@ struct JetLundReclustering {
   Configurable<float> vertexZCut{"vertexZCut", 10.0f, "Accepted z-vertex range"};
   Configurable<int> Nsplits{"Nsplits", 3, "choose for how many splits you want to extend the histogram registry"};
   //Binning Configurable<std::vector<double>>
-  ConfigurableAxis ptBinning{"pt-binning", {0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2,2.2,2.4,2.6,2.8,
-  3,3.2,3.4,3.6,3.8,4,4.4,4.8,5.2,5.6,6,6.5,7,7.5,8,9,10,11,12,13,14,15,16,17,18,19,21,23,25,27,30,34,38,42,48,56,62,70,80,90,100,110,120,130,145,160,180,200}, "pt-bins"};
+  ConfigurableAxis ptBinning{"pt-binning", {0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2,2.2,2.4,2.6,2.8,3,3.2,3.4,3.6,3.8,4,4.4,4.8,5.2,5.6,6,6.5,7,7.5,8,9,10,11,12,13,14,15,16,17,18,19,21,23,25,27,30,34,38,42,48,56,62,70,80,90,100,110,120,130,145,160,180,200}, "pt-bins"};
   ConfigurableAxis phiBinning{"phi-binning", {90, 0., 2 * M_PI}, "phi-bins"};
   ConfigurableAxis etaBinning{"eta-binning", {90, -0.9, 0.9}, "eta-bins"};
   ConfigurableAxis lnkTBinning{"lnkt-binning", {10, -10, 10}, "lnkt-bins"};
   ConfigurableAxis deltaRBinning{"Delta-R-binning", {50, 0.0, 0.5}, "deltaR-binning"};
   ConfigurableAxis nSubRatioBinning{"NSub-Ratio-binning", {50, 0.0f, 1.2f}, "nSubRatio-binning"};
   ConfigurableAxis zgBinning{"zg-binning", {50, 0, 1.2}, "zg-bins"};
-  ConfigurableAxis eradBinning{"erad-binning", {1000, 0, 10000}, "erad-bins"};
+  ConfigurableAxis eradBinning{"erad-binning", {500, 0, 250}, "erad-bins"};
   ConfigurableAxis lnDeltaRBinning{"lnDeltaRBinning-binning", {50, -5, 10}, "lnDeltaR-bins"};
   ConfigurableAxis lnzThetaBinning{"lnzTheta-binning", {50, -10, 10}, "lnzTheta-bins"};
   ConfigurableAxis tfBinning{"tf-binning", {100, 0, 22}, "tf-bins"};
@@ -138,6 +138,7 @@ struct JetLundReclustering {
   AxisSpec lnDeltaRAxis = {lnDeltaRBinning, "log(1/#Delta R)"};
   AxisSpec lnzThetaAxis = {lnzThetaBinning, "log(z_{g} #Delta R)"};
   AxisSpec tfAxis = {tfBinning, "#tau_{form}"};
+  AxisSpec tfAxisSum = {tfBinning, "#Sigma #tau_{form}"};
   AxisSpec lnTfAxis = {lnTfBinning, "ln(#tau_{form})"};
 
   int eventSelection = -1;
@@ -149,9 +150,12 @@ struct JetLundReclustering {
     eventSelection = jetderiveddatautilities::initialiseEventSelection(static_cast<std::string>(eventSelections));
     jetReclusterer.isReclustering = true;
     //jetReclusterer.algorithm = fastjet::JetAlgorithm::cambridge_algorithm;
-    jetReclusterer.algorithm = fastjet::JetAlgorithm::cambridge_algorithm;
+    jetReclusterer.jetR = jetR;
+    jetReclusterer.fastjetExtraParam = genKTp;// in jetfinder we use p = -1 for anti kt jetfinding, and then we do time recl. with p = 0.5
+    jetReclusterer.algorithm = fastjet::JetAlgorithm::genkt_algorithm;// gen kt is enum 3 in jetfiner setup
+    //jetReclusterer.jetDef = fastjet::JetDefinition(fastjet::JetAlgorithm::genkt_algorithm, jetR, 0.5, fastjet::E_scheme, fastjet::Best);
+    //jetReclusterer.setParams(); // calles in findJets
     //fastjet::JetDefinition jetReclusterer(fastjet::JetAlgorithm::genkt_algorithm, jetR, genKTp);
-   
     // Jet QA
     registry.add("h3PtEtaPhi_JClus", "Correlation of clustered jet #it{p}_{T}, #eta and #phi; p_{T,jet} [GeV/#it{c}];#eta_{jet};#phi_{jet} [rad]", HistType::kTH3F, {ptAxis, etaAxis, phiAxis});
     registry.add("h3PtEtaPhi_JRecl", "Correlation of lund plane (#tau_{form} veto ) reclustered jet #it{p}_{T}, #eta and #phi; p_{T,jet} [GeV/#it{c}];#eta_{jet};#phi_{jet} [rad]", HistType::kTH3F, {ptAxis, etaAxis, phiAxis});
@@ -161,6 +165,7 @@ struct JetLundReclustering {
     // Jet substructure - nSub0 = deltaR
     registry.add("h3Nsubj2Ratio", "Subjettiness Ratio correlation to p_{T} and R_{g}; #tau{2}/#tau_{1}; p_{T,jet} [GeV/#it{c}]; #Delta R",HistType::kTH3F, {nSubRatioAxis, ptAxis, deltaRAxis});
     registry.add("h3Nsubj2", "nSub2; nSub[0]; nSub[1]; nSub[2]", HistType::kTH3F, {deltaRAxis, {50, 0, 1.2}, {50, 0, 1.2}});
+    registry.add("THnSubjRatioJetFormationtime", "Correlation of Nsubjettiness and formation time (sum)", HistType::kTHnSparseD, {nSubRatioAxis, ptAxis, deltaRAxis, tfAxis, tfAxisSum, tfAxisSum, tfAxisSum});
 
     // fill 0 with ALL; 1 with 1st; 2 with 2nd ... 
     for (int nsplit = 0; nsplit < Nsplits+1; nsplit++){
@@ -186,7 +191,7 @@ struct JetLundReclustering {
 
   // Reclustering function
   template <typename T>
-  bool jetReclustering(T const& jet, int Tf, double Tfcut_min = 0, double Tfcut_max = 20, double Rgcut_max = 2)
+  bool jetReclustering(T const& jet, double jetR, int Tf, double Tfcut_min = 0, double Tfcut_max = 20, double Rgcut_max = 2)
   {
     bool passTfcut = false;
     double hbarc = 0.19732697;
@@ -200,12 +205,11 @@ struct JetLundReclustering {
     fastjet::PseudoJet j2;
     int i = 0;
     while (pair.has_parents(j1, j2)) {
-      if (j1.pt() < j2.pt()) {//following the softer branch for the kinematics below ??
+      if (j1.pt() < j2.pt()) {//following the softer branch for the kinematics
         std::swap(j1, j2);
       }
-      pair = j1;
       double deltaR = j1.delta_R(j2);// Rg
-      double erad = j1.e()+j2.e(); // this gives very strange values
+      double erad = j1.e()+j2.e(); // = pair.e()
       double kt = j2.pt() * deltaR;
       double z = j2.pt() / (j1.pt() + j2.pt());
       // lund plane coordinates
@@ -215,13 +219,18 @@ struct JetLundReclustering {
       double coord3 = std::log(1 / z);
       // formation times 
       double tf = 0.0;
-      double z1 = max(j1.e(),j2.e())/j2.e();// "Current jet -> j2"
-      double z2 = min(j1.e(),j2.e())/j2.e();
-      double tf_hard = 1./(2.*z1*z2*j1.e()*GeVtofm*(1-fastjet::cos_theta(j1,j2)));// tfe.push_back(1./(2.*z1*z2*CurrentJet.e()*GeVtofm*(1-fastjet::cos_theta(sj1,sj2))));
-      double tf_soft =  1 / (z*(1-z)*j1.perp()*GeVtofm*deltaR*deltaR);// tf.push_back(2./(zg*(1.-zg)*CurrentJet.perp()*GeVtofm*DeltaR*DeltaR/r0_/r0_));
+      double tfSum = 0.0;
+      double z1 = max(j1.e(),j2.e())/pair.e();
+      double z2 = min(j1.e(),j2.e())/pair.e();
+      double tf_single = GeVtofm*(2*pair.e()*z*(1-z)/(kt*kt));// new limit ! kt -> 1/GeV maybe: 2j1.e()*z*(z-1)*GeVtofm/(kt*kt)
+      double tf_hard = 1./(2.*z1*z2*pair.e()*GeVtofm*(1-fastjet::cos_theta(j1,j2)));// tfe.push_back(1./(2.*z1*z2*CurrentJet.e()*GeVtofm*(1-fastjet::cos_theta(sj1,sj2))));
+      double tf_soft =  2 / (z*(1-z)*pair.perp()*GeVtofm*(deltaR/jetR)*(deltaR/jetR));// tf.push_back(2./(zg*(1.-zg)*CurrentJet.perp()*GeVtofm*DeltaR*DeltaR/r0_/r0_)); // devide by r^2
+      std::cout<<"tf_single: "<<tf_single<<", tf_hard: "<<tf_hard<<", tf_soft: "<<tf_soft<<std::endl;
+      std::cout<<"Erad: "<<erad<<", pair.e(): "<<pair.e()<<std::endl;
       // choose the formation time limit used for the formation time cut
       if (Tf == 1) tf = tf_hard;
       else if (Tf == 2) tf = tf_soft;
+      else if (Tf == 3) tf = tf_single;
       else if (Tf == 0){
         if (deltaR > Rgcut_max) tf = tf_hard;
         if (deltaR <= Rgcut_max) tf = tf_soft;
@@ -230,9 +239,11 @@ struct JetLundReclustering {
       if (i == 0 ){
         if ((tf >= Tfcut_min) && (tf <= Tfcut_max)){
           passTfcut = true;
+          std::cout<<" accepted !"<<std::endl;
         }
         else{
           passTfcut = false;
+          std::cout<<" rejected !"<<std::endl;
           return passTfcut;
         }
         // fill 1st histogram with first split: (_1)
@@ -305,11 +316,14 @@ struct JetLundReclustering {
         registry.fill(HIST("h2ZgRgSplit_3"), z, deltaR);
       }
       i += 1;
+      tfSum += tf;
+      tfJet.push_back(tfSum);
+      pair = j1;
     }// end of while loop
     return passTfcut;
   }
 
-  // Process function for charged jets
+  // Process function for charged jets // make a secod function for subtractedConst,jets (PbPb)
   void processChargedJets(soa::Filtered<JetCollisions>::iterator const& collision,
                           soa::Filtered<soa::Join<aod::ChargedJets, aod::ChargedJetConstituents>> const& jets,
                           JetTracks const& tracks)
@@ -323,13 +337,14 @@ struct JetLundReclustering {
       for (auto& jetConstituent : jet.tracks_as<JetTracks>()) {
         fastjetutilities::fillTracks(jetConstituent, jetConstituents, jetConstituent.globalIndex());
       } //end of constituent loop 
-      if(jetReclustering(jet, Tf_limit, Tfcut_min, Tfcut_max, Rgcut_trans) == true){// Perform jet reclustering and time cut
+      if(jetReclustering(jet, jetR, Tf_limit, Tfcut_min, Tfcut_max, Rgcut_trans) == true){// Perform jet reclustering and time cut
         registry.fill(HIST("h3PtEtaPhi_JRecl"), jet.pt(), jet.eta(), jet.phi());
-        nSub = jetsubstructureutilities::getNSubjettiness(jet, tracks, tracks, tracks, Nsub, fastjet::contrib::CA_Axes(), true, Zcut, Beta);
+        nSub = jetsubstructureutilities::getNSubjettiness(jet, tracks, tracks, tracks, Nsub, fastjet::contrib::KT_Axes(), true, Zcut, Beta);
         registry.fill(HIST("h3PtEtaPhi_JReclSub2"), jet.pt(), jet.eta(), jet.phi());
-        registry.fill(HIST("h3Nsubj2"), nSub[0], nSub[1], nSub[2]);//add nsub ratio value to avoid underflow bin
-        if(nSub[2]/nSub[1] >= 0){
-          registry.fill(HIST("h3Nsubj2Ratio"), nSub[2]/nSub[1], jet.pt(), nSub[0]);// prolly underflow problem - check with the one above in plotting !
+        registry.fill(HIST("h3Nsubj2"), nSub[0], nSub[1], nSub[2]);
+        if((nSub[1] > 0) && (nSub[2]/nSub[1] >= 0)){
+          registry.fill(HIST("h3Nsubj2Ratio"), nSub[2]/nSub[1], jet.pt(), nSub[0]);
+          registry.fill(HIST("THnSubjRatioJetFormationtime"), nSub[2]/nSub[1], jet.pt(), nSub[0], tfJet[0], tfJet[1], tfJet[2], tfJet[3]);//tfJet
         }
       }
       else registry.fill(HIST("h3PtEtaPhi_JReject"), jet.pt(), jet.eta(), jet.phi());

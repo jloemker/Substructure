@@ -69,46 +69,17 @@ struct JetLundReclustering {
   JetFinder jetReclusterer;
 
   Configurable<std::string> eventSelections{"eventSelections", "sel8", "choose event selection"};
-  //Configurable<std::string> reclusterAxes{"reclusertAxes", "CA_Axes", "set recluster axes for Nsubjettiness"};
-  //Njettiness::AxesMode reclAxes;
-
-  /* available recluster Axes()
-  [x] KT_Axes;
-  [ ] CA_Axes;
-  class AntiKT_Axes;   // (R0)
-  class WTA_KT_Axes;
-  class WTA_CA_Axes;
-  class Manual_Axes;
-  class OnePass_KT_Axes;
-  class OnePass_CA_Axes;
-  class OnePass_AntiKT_Axes;   // (R0)
-  class OnePass_WTA_KT_Axes;
-  class OnePass_WTA_CA_Axes;
-  class OnePass_Manual_Axes;
-  class MultiPass_Axes;
-
-  //jet algorithms 
-  kt_algorithm 	the longitudinally invariant kt algorithm
-  cambridge_algorithm 	the longitudinally invariant variant of the cambridge algorithm (aka Aachen algoithm).
-  antikt_algorithm 	like the k_t but with distance measures dij = min(1/kti^2,1/ktj^2) Delta R_{ij}^2 / R^2 diB = 1/kti^2
-  genkt_algorithm 	like the k_t but with distance measures dij = min(kti^{2p},ktj^{2p}) Delta R_{ij}^2 / R^2 diB = 1/kti^{2p} where p = extra_param() 
-
-  */
-
- // add configurable axis !!!
   Configurable<double> Nsub{"Nsub", 2.0, "set N for (min) Nsubjettiness"};
   Configurable<double> Zcut{"Zcut", 0.1, "set z_{SD} for Nsubjettiness"};
   Configurable<double> Beta{"Beta", 0.0, "set #beta for Nsubjettiness"};
-  Configurable<double> Tfcut_min{"Tfcut_min", 0.0, "set min formation time (1st split)"};
-  Configurable<double> Tfcut_max{"Tfcut_max", 20.0, "set max formation time (1st split)"};
-  Configurable<double> Rgcut_trans{"Rgcut_trans", 0.1, "set the Rg at which the formation time calculation transitions between soft and hard"};
-  Configurable<int> Tf_limit{"Tf_limit", 0, "choose the 'soft: 2' or 'hard: 1' limit of the formation time, else transition: 0 based on Rg"};
+  Configurable<double> Rgcut{"Rgcut", 0.1, "set the R for upper (2*R/3) and lower (R/3) topoligical cut at which the formation time calculation transitions between soft and hard"};
+  Configurable<int> Tf_limit{"Tf_limit", 3, "choose the 'general: 3', 'soft: 2' or 'hard: 1' limit for the 1st formation time at soft substrucutre values"};
 
   Configurable<float> jetPtMin{"jetPtMin", 5.0, "minimum jet pT cut"};
   Configurable<float> jetR{"jetR", 0.4, "jet resolution parameter"};
   Configurable<float> jet_min_eta{"jet_min_eta", -0.5, "minimum jet eta"};
   Configurable<float> jet_max_eta{"jet_max_eta", 0.5, "maximum jet eta"};
-  Configurable<double> genKTp{"genKTp", 0.5, "select p value for generalized kT alogrithm"};//cannot be specified yet..
+  Configurable<double> genKTp{"genKTp", 0., "select p value for generalized kT alogrithm"};//cannot be specified yet..
 
   Configurable<float> vertexZCut{"vertexZCut", 10.0f, "Accepted z-vertex range"};
   Configurable<int> Nsplits{"Nsplits", 3, "choose for how many splits you want to extend the histogram registry"};
@@ -124,7 +95,7 @@ struct JetLundReclustering {
   ConfigurableAxis lnDeltaRBinning{"lnDeltaRBinning-binning", {50, -5, 10}, "lnDeltaR-bins"};
   ConfigurableAxis lnzThetaBinning{"lnzTheta-binning", {50, -10, 10}, "lnzTheta-bins"};
   ConfigurableAxis tfBinning{"tf-binning", {100, 0, 22}, "tf-bins"};
-  ConfigurableAxis lnTfBinning{"lnTf-binning", {100, 10, 10}, "lnTf-bins"};
+  ConfigurableAxis lnTfBinning{"lnTf-binning", {100, -5, 10}, "lnTf-bins"};
 
 
   AxisSpec ptAxis = {ptBinning, "#it{p}_{T} [GeV/#it{c}]"};
@@ -144,42 +115,41 @@ struct JetLundReclustering {
   int eventSelection = -1;
   void init(InitContext const&)
   {
-    //if(static_cast<std::string>(reclusterAxes) == "CA_Axes") reclAxes = fastjet::contrib::CA_Axes();
-    //else if(static_cast<std::string>(reclusterAxes) == "KT_Axes") reclAxes = fastjet::contrib::KT_Axes();
-    //else reclAxes = fastjet::contrib::KT_Axes();
     eventSelection = jetderiveddatautilities::initialiseEventSelection(static_cast<std::string>(eventSelections));
     jetReclusterer.isReclustering = true;
-    //jetReclusterer.algorithm = fastjet::JetAlgorithm::cambridge_algorithm;
     jetReclusterer.jetR = jetR;
-    jetReclusterer.fastjetExtraParam = genKTp;// in jetfinder we use p = -1 for anti kt jetfinding, and then we do time recl. with p = 0.5
+    jetReclusterer.fastjetExtraParam = genKTp;// in jetfinder we use p = -1 for anti kt jetfinding, and then we do time recl. with p=0.5, kt p =1, ca p=0
     jetReclusterer.algorithm = fastjet::JetAlgorithm::genkt_algorithm;// gen kt is enum 3 in jetfiner setup
-    //jetReclusterer.jetDef = fastjet::JetDefinition(fastjet::JetAlgorithm::genkt_algorithm, jetR, 0.5, fastjet::E_scheme, fastjet::Best);
-    //jetReclusterer.setParams(); // calles in findJets
-    //fastjet::JetDefinition jetReclusterer(fastjet::JetAlgorithm::genkt_algorithm, jetR, genKTp);
+
     // Jet QA
     registry.add("h3PtEtaPhi_JClus", "Correlation of clustered jet #it{p}_{T}, #eta and #phi; p_{T,jet} [GeV/#it{c}];#eta_{jet};#phi_{jet} [rad]", HistType::kTH3F, {ptAxis, etaAxis, phiAxis});
     registry.add("h3PtEtaPhi_JRecl", "Correlation of lund plane (#tau_{form} veto ) reclustered jet #it{p}_{T}, #eta and #phi; p_{T,jet} [GeV/#it{c}];#eta_{jet};#phi_{jet} [rad]", HistType::kTH3F, {ptAxis, etaAxis, phiAxis});
-    registry.add("h3PtEtaPhi_JReject", "Correlation of rejected (#tau_{form} veto ) jet #it{p}_{T}, #eta and #phi; p_{T,jet} [GeV/#it{c}];#eta_{jet};#phi_{jet} [rad]", HistType::kTH3F, {ptAxis, etaAxis, phiAxis});
+    registry.add("h3PtEtaPhi_JReject", "Correlation of rejected (substructure veto ) jet #it{p}_{T}, #eta and #phi; p_{T,jet} [GeV/#it{c}];#eta_{jet};#phi_{jet} [rad]", HistType::kTH3F, {ptAxis, etaAxis, phiAxis});
+    registry.add("h3PtEtaPhi_JRejectTau", "Correlation of rejected (#tau_{form} veto ) jet #it{p}_{T}, #eta and #phi; p_{T,jet} [GeV/#it{c}];#eta_{jet};#phi_{jet} [rad]", HistType::kTH3F, {ptAxis, etaAxis, phiAxis});
     registry.add("h3PtEtaPhi_JReclSub2", "Correlation of (1st iteration) reclustered (groomed) jet #it{p}_{T}, #eta and #phi; p_{T,jet} [GeV/#it{c}];#eta_{jet};#phi_{jet} [rad]", HistType::kTH3F, {ptAxis, etaAxis, phiAxis});
     
+    registry.add("h3Veto", " 1 hadronization cut 1st split, 2 hadroization cut x-th split, 3 jet formation time cut", HistType::kTH3F, {{4, 0, 1}, {4, 0, 1}, {4, 0, 1}});
+
     // Jet substructure - nSub0 = deltaR
     registry.add("h3Nsubj2Ratio", "Subjettiness Ratio correlation to p_{T} and R_{g}; #tau{2}/#tau_{1}; p_{T,jet} [GeV/#it{c}]; #Delta R",HistType::kTH3F, {nSubRatioAxis, ptAxis, deltaRAxis});
     registry.add("h3Nsubj2", "nSub2; nSub[0]; nSub[1]; nSub[2]", HistType::kTH3F, {deltaRAxis, {50, 0, 1.2}, {50, 0, 1.2}});
-    registry.add("THnSubjRatioJetFormationtime", "Correlation of Nsubjettiness and formation time (sum)", HistType::kTHnSparseD, {nSubRatioAxis, ptAxis, deltaRAxis, tfAxis, tfAxisSum, tfAxisSum, tfAxisSum});
+    registry.add("THnSubjRatioJetFormationtime", "Correlation of Nsubjettiness and formation time (sum)", HistType::kTHnSparseD, {nSubRatioAxis, ptAxis, deltaRAxis, tfAxis, tfAxisSum, tfAxisSum, tfAxisSum, tfAxisSum});
 
+    registry.add("Th4ZgRgTF", "Correlation of N-th split between Z_{g}, R_{g}, formation times (hard, soft); Z_{g}; R_{g}; #tau_{form, hard}; #tau_{form, soft}", HistType::kTHnSparseD, {zgAxis, deltaRAxis,tfAxis,tfAxis});
+    registry.add("h3ZgRgDiffTF", "Correlation of N-th split between Z_{g}, R_{g}, formation time differences (hard-soft); Z_{g}; R_{g}; #Delta #tau_{form}", HistType::kTH3F, {zgAxis, deltaRAxis,tfAxis});
     // fill 0 with ALL; 1 with 1st; 2 with 2nd ... 
     for (int nsplit = 0; nsplit < Nsplits+1; nsplit++){
-      registry.add(Form("h1ZgSplit_%d",nsplit), "Momentum sharing fraction; Z_{g}", HistType::kTH1F, {zgAxis});
-      registry.add(Form("h1RgSplit_%d", nsplit),"Angles of the algorithm; R_{g}", HistType::kTH1F, {deltaRAxis});
-      registry.add(Form("h1EradSplit_%d", nsplit),"Energy of sum of the two branches; E_{rad}", HistType::kTH1F, {eradAxis});
-      registry.add(Form("h1LogDr12Split_%d", nsplit),"Log(1/angle) in the algorithm; Log(1/dr_{12})", HistType::kTH1F, {lnDeltaRAxis});
-      registry.add(Form("h1LogZthetaSplit_%d", nsplit),"Log(z*angle) in the algorithm; Log(z*dr_{12})", HistType::kTH1F, {lnzThetaAxis});
-      registry.add(Form("h1TfSplit_%d", nsplit),"Formation time of the split; #tau_{form}", HistType::kTH1F, {tfAxis});
-      registry.add(Form("h1LogTfSplit_%d", nsplit),"Log(#tau_{form}); Log(#tau_{form})", HistType::kTH1F, {lnTfAxis});
+      registry.add(Form("h3ZgSplit_%d",nsplit), "Momentum sharing fraction; Z_{g}", HistType::kTH3F, {zgAxis, tfAxis, tfAxisSum});
+      registry.add(Form("h3RgSplit_%d", nsplit),"Angles of the algorithm; R_{g}", HistType::kTH3F, {deltaRAxis, tfAxis, tfAxisSum});
+      registry.add(Form("h3EradSplit_%d", nsplit),"Energy of sum of the two branches; E_{rad}", HistType::kTH3F, {eradAxis, tfAxis, tfAxisSum});
+      registry.add(Form("h3LogDr12Split_%d", nsplit),"Log(1/angle) in the algorithm; Log(1/dr_{12})", HistType::kTH3F, {lnDeltaRAxis, tfAxis, tfAxisSum});
+      registry.add(Form("h3LogZthetaSplit_%d", nsplit),"Log(z*angle) in the algorithm; Log(z*dr_{12})", HistType::kTH3F, {lnzThetaAxis, tfAxis, tfAxisSum});
+      registry.add(Form("h3TfSplit_%d", nsplit),"Formation time of the split; #tau_{form}", HistType::kTH3F, {tfAxis, tfAxis, tfAxisSum});
+      registry.add(Form("h3LogTfSplit_%d", nsplit),"Log(#tau_{form}); Log(#tau_{form})", HistType::kTH3F, {lnTfAxis, tfAxis, tfAxisSum});
       // Correlations
-      registry.add(Form("h2ZgTfSplit_%d", nsplit), "Correlation of N-th split between Z_{g} and #tau_{form}; Z_{g}; #tau_{form}", HistType::kTH2F, {zgAxis, tfAxis});
-      registry.add(Form("h2RgTfSplit_%d", nsplit), "Correlation of N-th split between R_{g} and #tau_{form}; R_{g}; #tau_{form}", HistType::kTH2F, {deltaRAxis, tfAxis});
-      registry.add(Form("h2ZgRgSplit_%d", nsplit), "Correlation of N-th split between Z_{g} and R_{g}; Z_{g}; R_{g}", HistType::kTH2F, {zgAxis, deltaRAxis});
+      registry.add(Form("Th4ZgRgSplit_%d", nsplit), "Correlation of N-th split between Z_{g}, R_{g}, formation time and the sum of formation times; Z_{g}; R_{g}; #tau_{form}; #Sigma #tau_{form}", HistType::kTHnSparseD, {zgAxis, deltaRAxis,tfAxis, tfAxisSum});
+      // Fromation time and their vetos
+      registry.add(Form("Th5TfTfcutSplit_%d", nsplit), "Correlation of N-th split between the current formation time values and formation time cut values", HistType::kTHnSparseD, {tfAxis, tfAxis, tfAxisSum, tfAxis, ptAxis});
       // Lund Plane 
       registry.add(Form("PrimaryLundPlane_kT_%d", nsplit), "Primary Lund 3D plane;ln(R/Delta);ln(k_{t}/GeV); p_{T,jet} [GeV/#it{c}]", {HistType::kTH3F, {{100, 0, 10}, {100, -10, 10}, ptAxis}});
       registry.add(Form("PrimaryLundPlane_z_%d", nsplit), "Primary Lund 3D plane;ln(R/Delta);ln(1/z); p_{T,jet} [GeV/#it{c}]", {HistType::kTH3F, {{100, 0, 10}, {100, 0, 10}, ptAxis}});
@@ -191,19 +161,21 @@ struct JetLundReclustering {
 
   // Reclustering function
   template <typename T>
-  bool jetReclustering(T const& jet, double jetR, int Tf, double Tfcut_min = 0, double Tfcut_max = 20, double Rgcut_max = 2)
+  bool jetReclustering(T const& jet, double jetR, int Tf)
   {
     bool passTfcut = false;
     double hbarc = 0.19732697;
     double GeVtofm = 1./hbarc; //~5.068;
-    
     jetReclustered.clear();
+    tfJet.clear();
     fastjet::ClusterSequenceArea clusterSeq(jetReclusterer.findJets(jetConstituents, jetReclustered));
     jetReclustered = sorted_by_pt(jetReclustered);
     fastjet::PseudoJet pair = jetReclustered[0];
     fastjet::PseudoJet j1;
     fastjet::PseudoJet j2;
     int i = 0;
+    double tfSum = 0.0;
+    double kcut_jet = 0.0;
     while (pair.has_parents(j1, j2)) {
       if (j1.pt() < j2.pt()) {//following the softer branch for the kinematics
         std::swap(j1, j2);
@@ -219,83 +191,101 @@ struct JetLundReclustering {
       double coord3 = std::log(1 / z);
       // formation times 
       double tf = 0.0;
-      double tfSum = 0.0;
-      double z1 = max(j1.e(),j2.e())/pair.e();
-      double z2 = min(j1.e(),j2.e())/pair.e();
-      double tf_single = GeVtofm*(2*pair.e()*z*(1-z)/(kt*kt));// new limit ! kt -> 1/GeV maybe: 2j1.e()*z*(z-1)*GeVtofm/(kt*kt)
-      double tf_hard = 1./(2.*z1*z2*pair.e()*GeVtofm*(1-fastjet::cos_theta(j1,j2)));// tfe.push_back(1./(2.*z1*z2*CurrentJet.e()*GeVtofm*(1-fastjet::cos_theta(sj1,sj2))));
-      double tf_soft =  2 / (z*(1-z)*pair.perp()*GeVtofm*(deltaR/jetR)*(deltaR/jetR));// tf.push_back(2./(zg*(1.-zg)*CurrentJet.perp()*GeVtofm*DeltaR*DeltaR/r0_/r0_)); // devide by r^2
-      std::cout<<"tf_single: "<<tf_single<<", tf_hard: "<<tf_hard<<", tf_soft: "<<tf_soft<<std::endl;
-      std::cout<<"Erad: "<<erad<<", pair.e(): "<<pair.e()<<std::endl;
-      // choose the formation time limit used for the formation time cut
-      if (Tf == 1) tf = tf_hard;
-      else if (Tf == 2) tf = tf_soft;
-      else if (Tf == 3) tf = tf_single;
-      else if (Tf == 0){
-        if (deltaR > Rgcut_max) tf = tf_hard;
-        if (deltaR <= Rgcut_max) tf = tf_soft;
-      }
+      //maybe we need an additional pt cut (high energy limit required to make eq. 4 applicable !)
+      double tf_general = GeVtofm / (2*pair.e()*z*(1-z)/(kt*kt/(jetR*jetR)));// new limit ! kt -> 1/GeV maybe: 2j1.e()*z*(z-1)*GeVtofm/(kt*kt)
+      double tf_hard = 1./(2.*z*(1-z)*pair.perp()*GeVtofm*(1-cos(deltaR/jetR)));// tfe.push_back(1./(2.*z1*z2*CurrentJet.e()*GeVtofm*(1-fastjet::cos_theta(sj1,sj2))));
+      double tf_soft =  2 / (z*pair.perp()*GeVtofm*(deltaR/jetR)*(deltaR/jetR));// tf.push_back(2./(zg*(1.-zg)*CurrentJet.perp()*GeVtofm*DeltaR*DeltaR/r0_/r0_)); // devide by r^2
+      // kinematic vetos on formation times
+      double kcut_em = GeVtofm*j2.perp();//*deltaR*deltaR/(jetR*jetR);//check values
       // setting return value and filling of histograms 
       if (i == 0 ){
-        if ((tf >= Tfcut_min) && (tf <= Tfcut_max)){
-          passTfcut = true;
-          std::cout<<" accepted !"<<std::endl;
-        }
-        else{
-          passTfcut = false;
-          std::cout<<" rejected !"<<std::endl;
-          return passTfcut;
-        }
+        kcut_jet = GeVtofm*j1.perp();//*deltaR*deltaR/(jetR*jetR);// deltaR/R * R^2
+        // choose the formation time limit used for the formation time of 1st split
+        if (Tf == 1) tf = tf_hard;
+        else if (Tf == 2) tf = tf_soft;
+        else if (Tf == 3) tf = tf_general;
+        if ((tf > kcut_jet) || (tf > kcut_em)){
+          registry.fill(HIST("h3Veto"), 1, 0, 0);
+          return false;
+        } 
+        else passTfcut = true;
+        tfSum = tfSum + tf;
+        if (tfSum <= kcut_jet){// only fill emissions in array if they can be real 
+          tfJet.push_back(tfSum);
+         }
         // fill 1st histogram with first split: (_1)
         // Lund Plane 
         registry.fill(HIST("PrimaryLundPlane_kT_1"), coord1, coord2, jet.pt());
         registry.fill(HIST("PrimaryLundPlane_z_1"), coord1, coord3, jet.pt());
         // Substructure
-        registry.fill(HIST("h1ZgSplit_1"), z);
-        registry.fill(HIST("h1RgSplit_1"), deltaR);
-        registry.fill(HIST("h1EradSplit_1"), erad);
-        registry.fill(HIST("h1LogDr12Split_1"), log(1/deltaR));
-        registry.fill(HIST("h1LogZthetaSplit_1"),log(z*deltaR));
-        registry.fill(HIST("h1TfSplit_1"), tf);
-        registry.fill(HIST("h1LogTfSplit_1"), log(tf));
+        registry.fill(HIST("h3ZgSplit_1"), z, tf, tfSum);
+        registry.fill(HIST("h3RgSplit_1"), deltaR, tf, tfSum);
+        registry.fill(HIST("h3EradSplit_1"), erad, tf, tfSum);
+        registry.fill(HIST("h3LogDr12Split_1"), log(1/deltaR), tf, tfSum);
+        registry.fill(HIST("h3LogZthetaSplit_1"),log(z*deltaR), tf, tfSum);
+        registry.fill(HIST("h3TfSplit_1"), tf, tf, tfSum);
+        registry.fill(HIST("h3LogTfSplit_1"), log(tf), tf, tfSum);
         // Correlations
-        registry.fill(HIST("h2ZgTfSplit_1"), z, tf);
-        registry.fill(HIST("h2RgTfSplit_1"), deltaR, tf);
-        registry.fill(HIST("h2ZgRgSplit_1"), z, deltaR);
+        registry.fill(HIST("Th4ZgRgSplit_1"), z, deltaR, tf, tfSum);// add ome for crosscheck
+        registry.fill(HIST("Th5TfTfcutSplit_1"), tf, kcut_em, tfSum, kcut_jet, jet.pt());
       }
+      else{
+        if (Tf == 1) tf = tf_hard;
+        else if (Tf == 2) tf = tf_soft;
+        else if (Tf == 3) tf = tf_general;
+
+        if ((tf > kcut_jet) || (tf > kcut_em)){
+          registry.fill(HIST("h3Veto"), 0, 1, 0);
+          pair = j1;
+          return passTfcut;
+        } 
+        else{
+          tfSum = tfSum + tf;
+          if (tfSum <= kcut_jet){// only fill emissions in array if they seem real 
+            tfJet.push_back(tfSum);
+           }
+          else{
+            registry.fill(HIST("h3Veto"), 0, 0, 1);
+            return passTfcut;
+          }
+        }
+        //else kcut_jet = kcut_jet - kcut_em;// hadronization time full jet - the time we lose to the emission
+      }
+
       // fill 0-th histogram with every split: all (_0)
       // Lund Plane 
       registry.fill(HIST("PrimaryLundPlane_kT_0"), coord1, coord2, jet.pt());
       registry.fill(HIST("PrimaryLundPlane_z_0"), coord1, coord3, jet.pt());
       // Substructure
-      registry.fill(HIST("h1ZgSplit_0"), z);
-      registry.fill(HIST("h1RgSplit_0"), deltaR);
-      registry.fill(HIST("h1EradSplit_0"), erad);
-      registry.fill(HIST("h1LogDr12Split_0"), log(1/deltaR));
-      registry.fill(HIST("h1LogZthetaSplit_0"),log(z*deltaR));
-      registry.fill(HIST("h1TfSplit_0"), tf);
-      registry.fill(HIST("h1LogTfSplit_0"), log(tf));
+      registry.fill(HIST("h3ZgSplit_0"), z, tf, tfSum);
+      registry.fill(HIST("h3RgSplit_0"), deltaR, tf, tfSum);
+      registry.fill(HIST("h3EradSplit_0"), erad, tf, tfSum);
+      registry.fill(HIST("h3LogDr12Split_0"), log(1/deltaR), tf, tfSum);
+      registry.fill(HIST("h3LogZthetaSplit_0"),log(z*deltaR), tf, tfSum);
+      registry.fill(HIST("h3TfSplit_0"), tf, tf, tfSum);
+      registry.fill(HIST("h3LogTfSplit_0"), log(tf), tf, tfSum);
       // Correlations
-      registry.fill(HIST("h2ZgTfSplit_0"), z, tf);
-      registry.fill(HIST("h2RgTfSplit_0"), deltaR, tf);
-      registry.fill(HIST("h2ZgRgSplit_0"), z, deltaR);
+      registry.fill(HIST("Th4ZgRgSplit_0"), z, deltaR, tf, tfSum);
+      registry.fill(HIST("Th4ZgRgTF"), z, deltaR, tf_hard, tf_soft);
+      registry.fill(HIST("Th5TfTfcutSplit_0"), tf, kcut_em, tfSum, kcut_jet, jet.pt());
+      registry.fill(HIST("h3ZgRgDiffTF"), z, deltaR, fabs(tf_hard - tf_soft));
+      std::cout<<"z: "<<z<<" | deltaR: "<<deltaR<<" | tf_hard: "<<tf_hard<<" | tf_soft z(1-z)E: "<<tf_soft<<" | tf_soft2 zE: " << tf_soft2 <<" | fabs(tf_hard - tf_soft): "<<fabs(tf_hard-tf_soft)<< " | fabs(tf_hard - tf_soft2): "<<fabs(tf_hard-tf_soft2)<<std::endl;
       if (i == 1){
         // fill 2nd histogram with 2nd emission: (_2)
         // Lund Plane 
         registry.fill(HIST("PrimaryLundPlane_kT_2"), coord1, coord2, jet.pt());
         registry.fill(HIST("PrimaryLundPlane_z_2"), coord1, coord3, jet.pt());
         // Substructure
-        registry.fill(HIST("h1ZgSplit_2"), z);
-        registry.fill(HIST("h1RgSplit_2"), deltaR);
-        registry.fill(HIST("h1EradSplit_2"), erad);
-        registry.fill(HIST("h1LogDr12Split_2"), log(1/deltaR));
-        registry.fill(HIST("h1LogZthetaSplit_2"),log(z*deltaR));          
-        registry.fill(HIST("h1TfSplit_2"), tf);
-        registry.fill(HIST("h1LogTfSplit_2"), log(tf));
+        registry.fill(HIST("h3ZgSplit_2"), z, tf, tfSum);
+        registry.fill(HIST("h3RgSplit_2"), deltaR, tf, tfSum);
+        registry.fill(HIST("h3EradSplit_2"), erad, tf, tfSum);
+        registry.fill(HIST("h3LogDr12Split_2"), log(1/deltaR), tf, tfSum);
+        registry.fill(HIST("h3LogZthetaSplit_2"),log(z*deltaR), tf, tfSum);
+        registry.fill(HIST("h3TfSplit_2"), tf, tf, tfSum);
+        registry.fill(HIST("h3LogTfSplit_2"), log(tf), tf, tfSum);
         // Correlations
-        registry.fill(HIST("h2ZgTfSplit_2"), z, tf);
-        registry.fill(HIST("h2RgTfSplit_2"), deltaR, tf);
-        registry.fill(HIST("h2ZgRgSplit_2"), z, deltaR);
+        registry.fill(HIST("Th4ZgRgSplit_2"), z, deltaR, tf, tfSum);
+        registry.fill(HIST("Th5TfTfcutSplit_2"), tf, kcut_em, tfSum, kcut_jet, jet.pt());
       }
       if (i == 2){
         // fill 3rd histogram with 3rd emission: (_3)
@@ -303,21 +293,18 @@ struct JetLundReclustering {
         registry.fill(HIST("PrimaryLundPlane_kT_3"), coord1, coord2, jet.pt());
         registry.fill(HIST("PrimaryLundPlane_z_3"), coord1, coord3, jet.pt());
         // Substructure
-        registry.fill(HIST("h1ZgSplit_3"), z);
-        registry.fill(HIST("h1RgSplit_3"), deltaR);
-        registry.fill(HIST("h1EradSplit_3"), erad);
-        registry.fill(HIST("h1LogDr12Split_3"), log(1/deltaR));
-        registry.fill(HIST("h1LogZthetaSplit_3"),log(z*deltaR));
-        registry.fill(HIST("h1TfSplit_3"), tf);
-        registry.fill(HIST("h1LogTfSplit_3"), log(tf));
+        registry.fill(HIST("h3ZgSplit_3"), z, tf, tfSum);
+        registry.fill(HIST("h3RgSplit_3"), deltaR, tf, tfSum);
+        registry.fill(HIST("h3EradSplit_3"), erad, tf, tfSum);
+        registry.fill(HIST("h3LogDr12Split_3"), log(1/deltaR), tf, tfSum);
+        registry.fill(HIST("h3LogZthetaSplit_3"),log(z*deltaR), tf, tfSum);
+        registry.fill(HIST("h3TfSplit_3"), tf, tf, tfSum);
+        registry.fill(HIST("h3LogTfSplit_3"), log(tf), tf, tfSum);
         // Correlations
-        registry.fill(HIST("h2ZgTfSplit_3"), z, tf);
-        registry.fill(HIST("h2RgTfSplit_3"), deltaR, tf);
-        registry.fill(HIST("h2ZgRgSplit_3"), z, deltaR);
+        registry.fill(HIST("Th4ZgRgSplit_3"), z, deltaR, tf, tfSum);
+        registry.fill(HIST("Th5TfTfcutSplit_3"), tf, kcut_em, tfSum, kcut_jet, jet.pt());
       }
       i += 1;
-      tfSum += tf;
-      tfJet.push_back(tfSum);
       pair = j1;
     }// end of while loop
     return passTfcut;
@@ -337,14 +324,35 @@ struct JetLundReclustering {
       for (auto& jetConstituent : jet.tracks_as<JetTracks>()) {
         fastjetutilities::fillTracks(jetConstituent, jetConstituents, jetConstituent.globalIndex());
       } //end of constituent loop 
-      if(jetReclustering(jet, jetR, Tf_limit, Tfcut_min, Tfcut_max, Rgcut_trans) == true){// Perform jet reclustering and time cut
+      nSub = jetsubstructureutilities::getNSubjettiness(jet, tracks, tracks, tracks, Nsub, fastjet::contrib::CA_Axes(), true, Zcut, Beta);
+      if((nSub[1] > 0) && (nSub[2]/nSub[1] >= 0) && ((nSub[2] > 0))){
         registry.fill(HIST("h3PtEtaPhi_JRecl"), jet.pt(), jet.eta(), jet.phi());
-        nSub = jetsubstructureutilities::getNSubjettiness(jet, tracks, tracks, tracks, Nsub, fastjet::contrib::KT_Axes(), true, Zcut, Beta);
-        registry.fill(HIST("h3PtEtaPhi_JReclSub2"), jet.pt(), jet.eta(), jet.phi());
-        registry.fill(HIST("h3Nsubj2"), nSub[0], nSub[1], nSub[2]);
-        if((nSub[1] > 0) && (nSub[2]/nSub[1] >= 0)){
-          registry.fill(HIST("h3Nsubj2Ratio"), nSub[2]/nSub[1], jet.pt(), nSub[0]);
-          registry.fill(HIST("THnSubjRatioJetFormationtime"), nSub[2]/nSub[1], jet.pt(), nSub[0], tfJet[0], tfJet[1], tfJet[2], tfJet[3]);//tfJet
+        if( (nSub[2]/nSub[1] <= 0.4) && (nSub[0] >= 2*Rgcut/3) ){//hard formation time
+          if(jetReclustering(jet, jetR, 1) == true){
+            registry.fill(HIST("h3PtEtaPhi_JReclSub2"), jet.pt(), jet.eta(), jet.phi());
+            registry.fill(HIST("h3Nsubj2"), nSub[0], nSub[1], nSub[2]);
+            registry.fill(HIST("h3Nsubj2Ratio"), nSub[2]/nSub[1], jet.pt(), nSub[0]);
+            registry.fill(HIST("THnSubjRatioJetFormationtime"), nSub[2]/nSub[1], jet.pt(), nSub[0], tfJet[0], tfJet[1], tfJet[2], tfJet[3], tfJet[4]);
+          }
+          else registry.fill(HIST("h3PtEtaPhi_JRejectTau"), jet.pt(), jet.eta(), jet.phi());
+        }
+        else if( (nSub[2]/nSub[1]>= 0.6) && (nSub[0] <= Rgcut/3) ){//soft formation time (with option to switch between single and soft)
+          if(jetReclustering(jet, jetR, Tf_limit) == true){
+            registry.fill(HIST("h3PtEtaPhi_JReclSub2"), jet.pt(), jet.eta(), jet.phi());
+            registry.fill(HIST("h3Nsubj2"), nSub[0], nSub[1], nSub[2]);
+            registry.fill(HIST("h3Nsubj2Ratio"), nSub[2]/nSub[1], jet.pt(), nSub[0]);
+            registry.fill(HIST("THnSubjRatioJetFormationtime"), nSub[2]/nSub[1], jet.pt(), nSub[0], tfJet[0], tfJet[1], tfJet[2], tfJet[3], tfJet[4]);
+          }
+          else registry.fill(HIST("h3PtEtaPhi_JRejectTau"), jet.pt(), jet.eta(), jet.phi());
+        }
+        else{
+          if(jetReclustering(jet, jetR, Tf_limit) == true){// single as general proxy for soft emission 
+            registry.fill(HIST("h3PtEtaPhi_JReclSub2"), jet.pt(), jet.eta(), jet.phi());
+            registry.fill(HIST("h3Nsubj2"), nSub[0], nSub[1], nSub[2]);
+            registry.fill(HIST("h3Nsubj2Ratio"), nSub[2]/nSub[1], jet.pt(), nSub[0]);
+            registry.fill(HIST("THnSubjRatioJetFormationtime"), nSub[2]/nSub[1], jet.pt(), nSub[0], tfJet[0], tfJet[1], tfJet[2], tfJet[3], tfJet[4]);
+          }
+          else registry.fill(HIST("h3PtEtaPhi_JRejectTau"), jet.pt(), jet.eta(), jet.phi());
         }
       }
       else registry.fill(HIST("h3PtEtaPhi_JReject"), jet.pt(), jet.eta(), jet.phi());
@@ -352,6 +360,56 @@ struct JetLundReclustering {
 
   }// end of void
   PROCESS_SWITCH(JetLundReclustering, processChargedJets, "Process function for charged jets", true);
+
+  void processEventWiseSubtractedChargedJets(soa::Filtered<JetCollisions>::iterator const& collision,
+                          soa::Filtered<soa::Join<aod::ChargedEventWiseSubtractedJets, aod::ChargedEventWiseSubtractedJetConstituents>> const& jets,
+                          JetTracksSub const& tracks)
+  {
+    if (!jetderiveddatautilities::selectCollision(collision, eventSelection)) {
+      return;
+    }
+    for (const auto& jet : jets) {
+      registry.fill(HIST("h3PtEtaPhi_JClus"), jet.pt(), jet.eta(), jet.phi());
+      jetConstituents.clear();
+      for (auto& jetConstituent : jet.tracks_as<JetTracksSub>()) {
+        fastjetutilities::fillTracks(jetConstituent, jetConstituents, jetConstituent.globalIndex());
+      } //end of constituent loop 
+      nSub = jetsubstructureutilities::getNSubjettiness(jet, tracks, tracks, tracks, Nsub, fastjet::contrib::CA_Axes(), true, Zcut, Beta);
+      if((nSub[1] > 0) && (nSub[2]/nSub[1] >= 0) && ((nSub[2] > 0))){
+        registry.fill(HIST("h3PtEtaPhi_JRecl"), jet.pt(), jet.eta(), jet.phi());
+        if( (nSub[2]/nSub[1] <= 0.4) && (nSub[0] >= 2*Rgcut/3) ){//hard formation time
+          if(jetReclustering(jet, jetR, 1) == true){
+            registry.fill(HIST("h3PtEtaPhi_JReclSub2"), jet.pt(), jet.eta(), jet.phi());
+            registry.fill(HIST("h3Nsubj2"), nSub[0], nSub[1], nSub[2]);
+            registry.fill(HIST("h3Nsubj2Ratio"), nSub[2]/nSub[1], jet.pt(), nSub[0]);
+            registry.fill(HIST("THnSubjRatioJetFormationtime"), nSub[2]/nSub[1], jet.pt(), nSub[0], tfJet[0], tfJet[1], tfJet[2], tfJet[3], tfJet[4]);
+          }
+          else registry.fill(HIST("h3PtEtaPhi_JRejectTau"), jet.pt(), jet.eta(), jet.phi());
+        }
+        else if( (nSub[2]/nSub[1]>= 0.6) && (nSub[0] <= Rgcut/3) ){//soft formation time (with option to switch between single and soft)
+          if(jetReclustering(jet, jetR, Tf_limit) == true){
+            registry.fill(HIST("h3PtEtaPhi_JReclSub2"), jet.pt(), jet.eta(), jet.phi());
+            registry.fill(HIST("h3Nsubj2"), nSub[0], nSub[1], nSub[2]);
+            registry.fill(HIST("h3Nsubj2Ratio"), nSub[2]/nSub[1], jet.pt(), nSub[0]);
+            registry.fill(HIST("THnSubjRatioJetFormationtime"), nSub[2]/nSub[1], jet.pt(), nSub[0], tfJet[0], tfJet[1], tfJet[2], tfJet[3], tfJet[4]);
+          }
+          else registry.fill(HIST("h3PtEtaPhi_JRejectTau"), jet.pt(), jet.eta(), jet.phi());
+        }
+        else{
+          if(jetReclustering(jet, jetR, Tf_limit) == true){// single as general proxy for soft emission 
+            registry.fill(HIST("h3PtEtaPhi_JReclSub2"), jet.pt(), jet.eta(), jet.phi());
+            registry.fill(HIST("h3Nsubj2"), nSub[0], nSub[1], nSub[2]);
+            registry.fill(HIST("h3Nsubj2Ratio"), nSub[2]/nSub[1], jet.pt(), nSub[0]);
+            registry.fill(HIST("THnSubjRatioJetFormationtime"), nSub[2]/nSub[1], jet.pt(), nSub[0], tfJet[0], tfJet[1], tfJet[2], tfJet[3], tfJet[4]);
+          }
+          else registry.fill(HIST("h3PtEtaPhi_JRejectTau"), jet.pt(), jet.eta(), jet.phi());
+        }
+      }
+      else registry.fill(HIST("h3PtEtaPhi_JReject"), jet.pt(), jet.eta(), jet.phi());
+    }// end of jet loop
+
+  }// end of void
+  PROCESS_SWITCH(JetLundReclustering, processEventWiseSubtractedChargedJets, "Process function for eventwiese subtracted charged jets", false);
 };
 
 WorkflowSpec defineDataProcessing(ConfigContext const& cfgc)
